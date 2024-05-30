@@ -1,5 +1,12 @@
-import { BoxGeometry, Mesh, MeshNormalMaterial, PerspectiveCamera, Scene, WebGLRenderer } from "three";
-
+import {
+  BoxGeometry,
+  Mesh,
+  MeshNormalMaterial,
+  PerspectiveCamera,
+  Scene,
+  WebGLRenderer,
+} from "three";
+import { resizeToParent } from "../three/resize";
 
 export class PathingGame {
   private parentElement: HTMLElement;
@@ -19,7 +26,12 @@ export class PathingGame {
 
   public async init() {
     const parentRect = this.parentElement.getBoundingClientRect();
-    this.camera = new PerspectiveCamera(70, parentRect.width / parentRect.height, 0.01, 100);
+    this.camera = new PerspectiveCamera(
+      70,
+      parentRect.width / parentRect.height,
+      0.01,
+      100
+    );
     this.camera.position.z = 1;
 
     this.scene = new Scene();
@@ -40,12 +52,7 @@ export class PathingGame {
   }
 
   public resize() {
-    const parentRect = this.parentElement.getBoundingClientRect();
-
-    this.camera.aspect = parentRect.width / parentRect.height;
-    this.camera.updateProjectionMatrix();
-
-    this.renderer.setSize(parentRect.width, parentRect.height);
+    resizeToParent(this.parentElement, [this.camera], [this.renderer]);
   }
 
   public animation(time: number) {
