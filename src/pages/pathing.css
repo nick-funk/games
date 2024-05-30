@@ -1,0 +1,17 @@
+html {
+  height: 100%;
+}
+
+body {
+  background-color: gray;
+
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.threeParent {
+  width: 100%;
+  height: 100%;
+}
