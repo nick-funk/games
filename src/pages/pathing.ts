@@ -6,7 +6,7 @@ import {
   Scene,
   WebGLRenderer,
 } from "three";
-import { resizeToParent } from "../three/resize";
+import { resizeToParent, wrapResizeFunc } from "../three/resize";
 
 export class PathingGame {
   private parentElement: HTMLElement;
@@ -21,7 +21,7 @@ export class PathingGame {
   constructor(parentElement: HTMLElement) {
     this.parentElement = parentElement;
     this.animDelegate = this.animation.bind(this);
-    this.resizeDelegate = this.resize.bind(this);
+    this.resizeDelegate = wrapResizeFunc(this.resize.bind(this));
   }
 
   public async init() {
