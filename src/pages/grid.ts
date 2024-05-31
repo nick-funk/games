@@ -257,6 +257,16 @@ export class Grid {
         continue;
       }
 
+      const isStart = this.isStart(item.gridX, item.gridY);
+      const isEnd = this.isEnd(item.gridX, item.gridY);
+      if (isStart || isEnd) {
+        continue;
+      }
+
+      if (item.pathMarked) {
+        continue;
+      }
+
       if (item.canTraverse) {
         item.position.setZ((item.position.z -= diff));
 
@@ -314,12 +324,6 @@ export class Grid {
       const material = mesh.material as MeshBasicMaterial;
       mesh.canTraverse = !mesh.canTraverse;
       mesh.pathMarked = false;
-
-      if (!mesh.canTraverse) {
-        material.color.set(CLICKED_COLOUR);
-      } else {
-        material.color.set(UNCLICK_COLOUR);
-      }
 
       material.needsUpdate = true;
     }
