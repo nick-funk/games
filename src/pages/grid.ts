@@ -44,32 +44,21 @@ export class Grid {
 
     this.group = new Group();
 
-    this.start = new Vector2(0, 0);
-    this.end = new Vector2(width - 1, length - 1);
-
     this.width = width;
     this.length = length;
+
+    this.start = new Vector2(0, 0);
+    this.end = new Vector2(width - 1, length - 1);
 
     const offsetX = width / 2;
     const offsetY = length / 2;
 
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < length; y++) {
-        const isStart = this.isStart(x, y);
-        const isEnd = this.isEnd(x, y);
-        const isClickable = !isStart && !isEnd;
-
         const xTransl = (x - offsetX) * 0.11;
         const yTransl = (y - offsetY) * 0.11;
 
-        const square = this.createGridSquare();
-        square.key = this.computeKey(x, y);
-        square.gridX = x;
-        square.gridY = y;
-        square.isClickable = isClickable;
-        square.canTraverse = true;
-        square.material.needsUpdate = true;
-
+        const square = this.createGridSquare(x, y);
         square.translateX(xTransl);
         square.translateY(yTransl);
 
@@ -214,14 +203,24 @@ export class Grid {
     return `${x}:${y}`;
   }
 
-  private createGridSquare() {
+  private createGridSquare(x: number, y: number) {
     const geometry = new PlaneGeometry(0.1, 0.1, 1, 1);
     const material = new MeshBasicMaterial({ color: new Color(1, 1, 1) });
 
-    const mesh = new Mesh(geometry, material) as unknown as GridMesh;
-    mesh.pathMarked = false;
+    const square = new Mesh(geometry, material) as unknown as GridMesh;
+    square.pathMarked = false;
 
-    return mesh;
+    const isClickable = !this.isStart(x, y) && !this.isEnd(x, y);
+
+    square.key = this.computeKey(x, y);
+    square.gridX = x;
+    square.gridY = y;
+    square.isClickable = isClickable;
+    square.canTraverse = true;
+
+    square.material.needsUpdate = true;
+
+    return square;
   }
 
   public addToScene(scene: Scene) {
