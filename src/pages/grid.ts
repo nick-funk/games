@@ -6,7 +6,6 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
-  PlaneGeometry,
   Raycaster,
   Scene,
   Vector2,
@@ -257,17 +256,33 @@ export class Grid {
       }
 
       if (item.canTraverse) {
-        item.position.setZ(item.position.z -= diff);
+        item.position.setZ((item.position.z -= diff));
 
         if (item.position.z < 0) {
           item.position.z = 0;
         }
+
+        const interp = item.position.z / 0.1;
+        const color = clickedColor
+          .clone()
+          .multiplyScalar(interp)
+          .add(unClickedColor.clone().multiplyScalar(1 - interp));
+
+        item.material.color = color;
       } else {
-        item.position.setZ(item.position.z += diff);
+        item.position.setZ((item.position.z += diff));
 
         if (item.position.z > 0.1) {
           item.position.z = 0.1;
         }
+
+        const interp = item.position.z / 0.1;
+        const color = unClickedColor
+          .clone()
+          .multiplyScalar(1 - interp)
+          .add(clickedColor.clone().multiplyScalar(interp));
+
+        item.material.color = color;
       }
     }
   }
