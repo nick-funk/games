@@ -26,6 +26,12 @@ interface GridMesh extends Mesh {
   pathMarked: boolean;
 }
 
+const startColor = new Color(0.05, 1, 0);
+const endColor = new Color(1, 1, 0);
+const unClickedColor = new Color(0.9, 0.9, 0.9);
+const clickedColor = new Color(1, 0.05, 0.05);
+const pathColor = new Color(0.3, 0.3, 1);
+
 export class Grid {
   private group: Group;
   private rays: Raycaster;
@@ -187,20 +193,20 @@ export class Grid {
       }
 
       square.pathMarked = true;
-      square.material.color.set(new Color(0, 0, 1));
+      square.material.color.set(pathColor);
       square.material.needsUpdate = true;
     }
   }
 
   private computeColor(isStart: boolean, isEnd: boolean) {
     if (isStart) {
-      return new Color(0, 1, 0);
+      return startColor;
     }
     if (isEnd) {
-      return new Color(1, 1, 0);
+      return endColor;
     }
 
-    return new Color(1, 1, 1);
+    return unClickedColor;
   }
 
   private computeKey(x: number, y: number) {
@@ -209,7 +215,7 @@ export class Grid {
 
   private createGridSquare(x: number, y: number) {
     const geometry = new BoxGeometry(0.1, 0.1, 0.1);
-    const material = new MeshStandardMaterial({ color: new Color(1, 1, 1) });
+    const material = new MeshStandardMaterial({ color: unClickedColor });
 
     const square = new Mesh(geometry, material) as unknown as GridMesh;
     square.pathMarked = false;
@@ -293,9 +299,9 @@ export class Grid {
       mesh.pathMarked = false;
 
       if (!mesh.canTraverse) {
-        material.color.set(new Color(1, 0, 0));
+        material.color.set(clickedColor);
       } else {
-        material.color.set(new Color(1, 1, 1));
+        material.color.set(unClickedColor);
       }
 
       material.needsUpdate = true;
