@@ -22,6 +22,11 @@ import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { GammaCorrectionShader } from "./gammaCorrectionShader";
 import { isSmallScreen } from "../three/screen";
 
+export interface State {
+  play: boolean;
+  reset: boolean;
+}
+
 export class PathingGame {
   private parentElement: HTMLElement;
   private animDelegate: (time: number) => void;
@@ -37,6 +42,8 @@ export class PathingGame {
   private gammaCorrectionPass: ShaderPass;
   private lastTime: number;
 
+  public state: State;
+
   constructor(parentElement: HTMLElement) {
     this.lastTime = 0;
 
@@ -46,6 +53,8 @@ export class PathingGame {
   }
 
   public async init() {
+    this.resetState();
+
     const parentRect = this.parentElement.getBoundingClientRect();
     this.camera = new PerspectiveCamera(
       70,
@@ -99,6 +108,13 @@ export class PathingGame {
     window.addEventListener("resize", this.resizeDelegate);
   }
 
+  private resetState() {
+    this.state = {
+      play: false,
+      reset: false,
+    }
+  }
+
   public resize() {
     resizeToParent(
       this.parentElement,
@@ -117,12 +133,14 @@ export class PathingGame {
 
     this.grid.update(this.input, this.camera, elapsed);
 
-    if (this.input.isKeyDown("p")) {
+    if (this.input.isKeyDown("p") || this.state.play) {
       this.grid.traverse();
     }
-    if (this.input.isKeyDown("r")) {
+    if (this.input.isKeyDown("r") || this.state.reset) {
       this.grid.reset();
     }
+
+    this.resetState();
 
     this.composer.render();
   }
