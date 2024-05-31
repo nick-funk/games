@@ -25,11 +25,13 @@ interface GridMesh extends Mesh {
   pathMarked: boolean;
 }
 
-const startColor = new Color(0.05, 1, 0);
-const endColor = new Color(1, 1, 0);
-const unClickedColor = new Color(0.9, 0.9, 0.9);
-const clickedColor = new Color(1, 0.05, 0.05);
-const pathColor = new Color(0.3, 0.3, 1);
+const START_COLOUR = new Color(0.05, 1, 0);
+const END_COLOUR = new Color(1, 1, 0);
+const UNCLICK_COLOUR = new Color(0.9, 0.9, 0.9);
+const CLICKED_COLOUR = new Color(1, 0.05, 0.05);
+const PATH_COLOUR = new Color(0.3, 0.3, 1);
+
+const RAISE_AMOUNT = 0.1;
 
 export class Grid {
   private group: Group;
@@ -192,20 +194,20 @@ export class Grid {
       }
 
       square.pathMarked = true;
-      square.material.color.set(pathColor);
+      square.material.color.set(PATH_COLOUR);
       square.material.needsUpdate = true;
     }
   }
 
   private computeColor(isStart: boolean, isEnd: boolean) {
     if (isStart) {
-      return startColor;
+      return START_COLOUR;
     }
     if (isEnd) {
-      return endColor;
+      return END_COLOUR;
     }
 
-    return unClickedColor;
+    return UNCLICK_COLOUR;
   }
 
   private computeKey(x: number, y: number) {
@@ -214,7 +216,7 @@ export class Grid {
 
   private createGridSquare(x: number, y: number) {
     const geometry = new BoxGeometry(0.1, 0.1, 0.1);
-    const material = new MeshStandardMaterial({ color: unClickedColor });
+    const material = new MeshStandardMaterial({ color: UNCLICK_COLOUR });
 
     const square = new Mesh(geometry, material) as unknown as GridMesh;
     square.pathMarked = false;
@@ -262,25 +264,25 @@ export class Grid {
           item.position.z = 0;
         }
 
-        const interp = item.position.z / 0.1;
-        const color = clickedColor
+        const interp = item.position.z / RAISE_AMOUNT;
+        const color = CLICKED_COLOUR
           .clone()
           .multiplyScalar(interp)
-          .add(unClickedColor.clone().multiplyScalar(1 - interp));
+          .add(UNCLICK_COLOUR.clone().multiplyScalar(1 - interp));
 
         item.material.color = color;
       } else {
         item.position.setZ((item.position.z += diff));
 
-        if (item.position.z > 0.1) {
-          item.position.z = 0.1;
+        if (item.position.z > RAISE_AMOUNT) {
+          item.position.z = RAISE_AMOUNT;
         }
 
-        const interp = item.position.z / 0.1;
-        const color = unClickedColor
+        const interp = item.position.z / RAISE_AMOUNT;
+        const color = UNCLICK_COLOUR
           .clone()
           .multiplyScalar(1 - interp)
-          .add(clickedColor.clone().multiplyScalar(interp));
+          .add(CLICKED_COLOUR.clone().multiplyScalar(interp));
 
         item.material.color = color;
       }
@@ -314,9 +316,9 @@ export class Grid {
       mesh.pathMarked = false;
 
       if (!mesh.canTraverse) {
-        material.color.set(clickedColor);
+        material.color.set(CLICKED_COLOUR);
       } else {
-        material.color.set(unClickedColor);
+        material.color.set(UNCLICK_COLOUR);
       }
 
       material.needsUpdate = true;
