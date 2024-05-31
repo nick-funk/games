@@ -64,7 +64,7 @@ export class PathingGame {
     const ambientLight = new AmbientLight(new Color(1, 1, 1), 0.75);
     this.scene.add(ambientLight);
 
-    const directionaLight = new DirectionalLight(new Color(1, 1, 1), 1.5);
+    const directionaLight = new DirectionalLight(new Color(1, 1, 1), 3);
     directionaLight.castShadow = true;
     directionaLight.position.set(1.0, 1.0, 1.0);
     this.scene.add(directionaLight);
