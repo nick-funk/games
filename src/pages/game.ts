@@ -20,6 +20,7 @@ import { Grid } from "./grid";
 import { InputManager } from "../three/inputManager";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { GammaCorrectionShader } from "./gammaCorrectionShader";
+import { isSmallScreen } from "../three/screen";
 
 export class PathingGame {
   private parentElement: HTMLElement;
@@ -52,8 +53,15 @@ export class PathingGame {
       0.01,
       100
     );
-    this.camera.position.z = 1;
-    this.camera.position.y = -0.5;
+
+    if (isSmallScreen()) {
+      this.camera.position.z = 1.55;
+      this.camera.position.y = -0.85;
+    } else {
+      this.camera.position.z = 1;
+      this.camera.position.y = -0.5;
+    }
+
     this.camera.lookAt(new Vector3(0, 0, 0));
 
     this.scene = new Scene();
