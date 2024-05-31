@@ -23,5 +23,18 @@
   font-family: sans-serif;
   font-size: medium;
 
-  padding: 8px;
+  padding: 6px 12px;
+  border: 1px outset rgb(86, 37, 245);
+  border-radius: 3px;
+  color: rgb(242, 242, 242);
+  background-color: rgb(121, 36, 248);
+  text-decoration: none;
+
+  &:hover {
+    background-color: rgb(149, 83, 250);
+  }
+
+  &:active {
+    background-color: rgb(79, 0, 198);
+  }
 }
