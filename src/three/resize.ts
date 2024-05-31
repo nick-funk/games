@@ -1,5 +1,4 @@
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
-import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 
 interface ResizableCamera {
   aspect: number;
