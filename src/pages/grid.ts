@@ -1,9 +1,11 @@
 import {
+  BoxGeometry,
   Camera,
   Color,
   Group,
   Mesh,
   MeshBasicMaterial,
+  MeshStandardMaterial,
   PlaneGeometry,
   Raycaster,
   Scene,
@@ -204,8 +206,8 @@ export class Grid {
   }
 
   private createGridSquare(x: number, y: number) {
-    const geometry = new PlaneGeometry(0.1, 0.1, 1, 1);
-    const material = new MeshBasicMaterial({ color: new Color(1, 1, 1) });
+    const geometry = new BoxGeometry(0.1, 0.1, 0.1);
+    const material = new MeshStandardMaterial({ color: new Color(1, 1, 1) });
 
     const square = new Mesh(geometry, material) as unknown as GridMesh;
     square.pathMarked = false;
@@ -259,8 +261,10 @@ export class Grid {
 
       if (!mesh.canTraverse) {
         material.color.set(new Color(1, 0, 0));
+        mesh.position.setZ(0.1);
       } else {
         material.color.set(new Color(1, 1, 1));
+        mesh.position.setZ(0);
       }
 
       material.needsUpdate = true;

@@ -1,3 +1,6 @@
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
+
 interface ResizableCamera {
   aspect: number;
   updateProjectionMatrix: () => void;
@@ -7,12 +10,28 @@ interface ResizableRenderer {
   setSize: (width: number, height: number) => void;
 }
 
+interface ResizablePass {
+  setSize: (width: number, height: number) => void;
+}
+
 export const resizeToParent = (
   parentElement: HTMLElement,
   cameras: ResizableCamera[],
-  renderers: ResizableRenderer[]
+  renderers: ResizableRenderer[],
+  passes?: ResizablePass[],
+  composer?: EffectComposer,
 ) => {
   const parentRect = parentElement.getBoundingClientRect();
+
+  if (passes) {
+    for (const pass of passes) {
+      pass.setSize(parentRect.width, parentRect.height);
+    }
+  }
+
+  if (composer) {
+    composer.setSize(parentRect.width, parentRect.height);
+  }
 
   for (const camera of cameras) {
     camera.aspect = parentRect.width / parentRect.height;
