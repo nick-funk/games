@@ -7,9 +7,12 @@ import {
   PlaneGeometry,
   Raycaster,
   Scene,
+  Vector2,
+  Vector3,
 } from "three";
 import { InputManager } from "../three/inputManager";
 import { nearest } from "../three/nearest";
+import { computePath } from "../../node_modules/nf-pathfinder/dist/index";
 
 interface GridMesh extends Mesh {
   isClickable: boolean;
@@ -18,6 +21,7 @@ interface GridMesh extends Mesh {
   gridY: number;
   key: string;
   material: MeshBasicMaterial;
+  pathMarked: boolean;
 }
 
 export class Grid {
@@ -26,23 +30,33 @@ export class Grid {
 
   private leftMouseDown: boolean;
 
+  private width: number;
+  private length: number;
+
   private lookup: Map<string, GridMesh>;
 
-  constructor() {
+  private start: Vector2;
+  private end: Vector2;
+
+  constructor(width = 8, length = 8) {
     this.rays = new Raycaster();
     this.lookup = new Map<string, GridMesh>();
 
     this.group = new Group();
 
-    const width = 8;
-    const height = 8;
+    this.start = new Vector2(0, 0);
+    this.end = new Vector2(width - 1, length - 1);
+
+    this.width = width;
+    this.length = length;
+
     const offsetX = width / 2;
-    const offsetY = height / 2;
+    const offsetY = length / 2;
 
     for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        const isStart = x == 0 && y == 0;
-        const isEnd = x == width - 1 && y == height - 1;
+      for (let y = 0; y < length; y++) {
+        const isStart = this.isStart(x, y);
+        const isEnd = this.isEnd(x, y);
         const isClickable = !isStart && !isEnd;
 
         const xTransl = (x - offsetX) * 0.11;
@@ -54,15 +68,134 @@ export class Grid {
         square.gridY = y;
         square.isClickable = isClickable;
         square.canTraverse = true;
-        square.material.color.set(this.computeColor(isStart, isEnd));
         square.material.needsUpdate = true;
-        
+
         square.translateX(xTransl);
         square.translateY(yTransl);
 
         this.group.add(square);
         this.lookup.set(square.key, square);
       }
+    }
+
+    this.reset();
+  }
+
+  private isStart(x: number, y: number) {
+    return x === this.start.x && y === this.start.y;
+  }
+
+  private isEnd(x: number, y: number) {
+    return x === this.end.x && y === this.end.y;
+  }
+
+  private reset() {
+    for (let x = 0; x < this.width; x++) {
+      for (let y = 0; y < this.length; y++) {
+        const isStart = this.isStart(x, y);
+        const isEnd = this.isEnd(x, y);
+
+        const key = this.computeKey(x, y);
+        const square = this.lookup.get(key);
+        if (!square) {
+          continue;
+        }
+
+        square.canTraverse = true;
+        square.material.color.set(this.computeColor(isStart, isEnd));
+        square.material.needsUpdate = true;
+      }
+    }
+  }
+
+  private clearPath() {
+    for (let x = 0; x < this.width; x++) {
+      for (let y = 0; y < this.length; y++) {
+        const isStart = this.isStart(x, y);
+        const isEnd = this.isEnd(x, y);
+
+        const key = this.computeKey(x, y);
+        const square = this.lookup.get(key);
+        if (!square) {
+          continue;
+        }
+
+        if (square.pathMarked) {
+          square.material.color.set(this.computeColor(isStart, isEnd));
+          square.material.needsUpdate = true;
+
+          square.pathMarked = false;
+        }
+      }
+    }
+  }
+
+  public computeTraversalMap() {
+    const traversalMap: number[][] = [];
+
+    for (let x = 0; x < this.width; x++) {
+      traversalMap.push([]);
+
+      for (let y = 0; y < this.length; y++) {
+        traversalMap[0].push(1);
+      }
+    }
+
+    for (let x = 0; x < this.width; x++) {
+      for (let y = 0; y < this.length; y++) {
+        const key = this.computeKey(x, y);
+        const square = this.lookup.get(key);
+        if (!square) {
+          console.warn(`unable to find square for key ${key}`);
+          continue;
+        }
+
+        traversalMap[x][y] = square.canTraverse ? 1 : 0;
+      }
+    }
+
+    return traversalMap;
+  }
+
+  public traversalToString(traversal: number[][]) {
+    let output = "";
+
+    for (let x = 0; x < this.width; x++) {
+      const vals: number[] = [];
+      for (let y = 0; y < this.length; y++) {
+        const value = traversal[x][y];
+        vals.push(value);
+      }
+
+      output += `${vals.join(",")}\n`;
+    }
+
+    return output;
+  }
+
+  public traverse() {
+    this.clearPath();
+
+    const path = computePath(
+      this.computeTraversalMap(),
+      new Vector2(0, 0),
+      new Vector3(this.width - 1, this.length - 1),
+      false
+    );
+
+    for (const p of path) {
+      const isStart = this.isStart(p.x, p.y);
+      const isEnd = this.isEnd(p.x, p.y);
+
+      const key = this.computeKey(p.x, p.y);
+      const square = this.lookup.get(key);
+      if (!square || isStart || isEnd) {
+        continue;
+      }
+
+      square.pathMarked = true;
+      square.material.color.set(new Color(0, 0, 1));
+      square.material.needsUpdate = true;
     }
   }
 
@@ -73,7 +206,7 @@ export class Grid {
     if (isEnd) {
       return new Color(1, 1, 0);
     }
-    
+
     return new Color(1, 1, 1);
   }
 
@@ -86,6 +219,8 @@ export class Grid {
     const material = new MeshBasicMaterial({ color: new Color(1, 1, 1) });
 
     const mesh = new Mesh(geometry, material) as unknown as GridMesh;
+    mesh.pathMarked = false;
+
     return mesh;
   }
 
@@ -121,6 +256,7 @@ export class Grid {
 
       const material = mesh.material as MeshBasicMaterial;
       mesh.canTraverse = !mesh.canTraverse;
+      mesh.pathMarked = false;
 
       if (!mesh.canTraverse) {
         material.color.set(new Color(1, 0, 0));

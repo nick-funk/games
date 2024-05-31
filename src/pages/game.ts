@@ -57,6 +57,9 @@ export class PathingGame {
     this.input.update();
 
     this.grid.update(this.input, this.camera);
+    if (this.input.isKeyDown("p")) {
+      this.grid.traverse();
+    }
 
     this.renderer.render(this.scene, this.camera);
   }
