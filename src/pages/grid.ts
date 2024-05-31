@@ -54,11 +54,12 @@ export class Grid {
 
     const offsetX = width / 2;
     const offsetY = length / 2;
+    const scaling = 0.11;
 
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < length; y++) {
-        const xTransl = (x - offsetX) * 0.11;
-        const yTransl = (y - offsetY) * 0.11;
+        const xTransl = (x - offsetX) * scaling + scaling / 2;
+        const yTransl = (y - offsetY) * scaling + scaling / 2;
 
         const square = this.createGridSquare(x, y);
         square.translateX(xTransl);
