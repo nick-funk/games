@@ -33,9 +33,12 @@ export class PathingGame {
   private grid: Grid;
   private composer: EffectComposer;
   private renderPass: SSAARenderPass;
-  gammaCorrectionPass: ShaderPass;
+  private gammaCorrectionPass: ShaderPass;
+  private lastTime: number;
 
   constructor(parentElement: HTMLElement) {
+    this.lastTime = 0;
+
     this.parentElement = parentElement;
     this.animDelegate = this.animation.bind(this);
     this.resizeDelegate = wrapResizeFunc(this.resize.bind(this));
@@ -99,11 +102,18 @@ export class PathingGame {
   }
 
   public animation(time: number) {
+    const elapsed = (time - this.lastTime) / 1000;
+    this.lastTime = time;
+
     this.input.update();
 
-    this.grid.update(this.input, this.camera);
+    this.grid.update(this.input, this.camera, elapsed);
+
     if (this.input.isKeyDown("p")) {
       this.grid.traverse();
+    }
+    if (this.input.isKeyDown("r")) {
+      this.grid.reset();
     }
 
     this.composer.render();

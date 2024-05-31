@@ -80,7 +80,7 @@ export class Grid {
     return x === this.end.x && y === this.end.y;
   }
 
-  private reset() {
+  public reset() {
     for (let x = 0; x < this.width; x++) {
       for (let y = 0; y < this.length; y++) {
         const isStart = this.isStart(x, y);
@@ -95,6 +95,7 @@ export class Grid {
         square.canTraverse = true;
         square.material.color.set(this.computeColor(isStart, isEnd));
         square.material.needsUpdate = true;
+        square.position.setZ(0);
       }
     }
   }
@@ -233,7 +234,38 @@ export class Grid {
     scene.remove(this.group);
   }
 
-  public update(input: InputManager, camera: Camera) {
+  public update(input: InputManager, camera: Camera, elapsed: number) {
+    this.updateClick(input, camera);
+    this.updateAnimations(elapsed);
+  }
+
+  private updateAnimations(elapsed: number) {
+    const speed = 0.25;
+    const diff = elapsed * speed;
+
+    for (const key of this.lookup.keys()) {
+      const item = this.lookup.get(key);
+      if (!item) {
+        continue;
+      }
+
+      if (item.canTraverse) {
+        item.position.setZ(item.position.z -= diff);
+
+        if (item.position.z < 0) {
+          item.position.z = 0;
+        }
+      } else {
+        item.position.setZ(item.position.z += diff);
+
+        if (item.position.z > 0.1) {
+          item.position.z = 0.1;
+        }
+      }
+    }
+  }
+
+  private updateClick(input: InputManager, camera: Camera) {
     if (!this.leftMouseDown && input.mouse().buttons.left.down) {
       this.clickGrid(input, camera);
       this.leftMouseDown = true;
@@ -261,10 +293,8 @@ export class Grid {
 
       if (!mesh.canTraverse) {
         material.color.set(new Color(1, 0, 0));
-        mesh.position.setZ(0.1);
       } else {
         material.color.set(new Color(1, 1, 1));
-        mesh.position.setZ(0);
       }
 
       material.needsUpdate = true;
