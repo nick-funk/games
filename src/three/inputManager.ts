@@ -36,7 +36,8 @@ export class InputManager {
   private onMouseUpDelegate: (event: MouseEvent) => void;
   private onMouseClickDelegate: (event: MouseEvent) => void;
   private onMouseWheelDelegate: (event: WheelEvent) => void;
-  private onMouseLeaveDelegate: (event: MouseEvent) => void;;
+  private onMouseLeaveDelegate: (event: MouseEvent) => void;
+  private onPressDelegate: (event: TouchEvent) => void;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -78,6 +79,7 @@ export class InputManager {
     this.onMouseClickDelegate = this.onMouseClick.bind(this);
     this.onMouseWheelDelegate = this.onMouseWheel.bind(this);
     this.onMouseLeaveDelegate = this.onMouseLeave.bind(this);
+    this.onPressDelegate = this.onPress.bind(this);
 
     canvas.addEventListener("pointermove", this.onMouseMoveDelegate);
     canvas.addEventListener("mousedown", this.onMouseDownDelegate);
@@ -85,6 +87,7 @@ export class InputManager {
     canvas.addEventListener("click", this.onMouseClickDelegate);
     canvas.addEventListener("wheel", this.onMouseWheelDelegate);
     canvas.addEventListener("mouseleave", this.onMouseLeaveDelegate);
+    canvas.addEventListener("touchstart", this.onPressDelegate);
   }
 
   public update() {
@@ -94,6 +97,28 @@ export class InputManager {
     this._mouse.wheel.deltaX = 0;
     this._mouse.wheel.deltaY = 0;
     this._mouse.wheel.deltaZ = 0;
+  }
+
+  private onPress(event: TouchEvent) {
+    const canvasRect = this.canvas.getBoundingClientRect();
+
+    for (const touch of event.touches) {
+      this._mouse.buttons.left.down = true;
+      
+      const canvasX = touch.clientX - canvasRect.left;
+      const canvasY = touch.clientY - canvasRect.top;
+
+      const relX = (canvasX / canvasRect.width) * 2 - 1;
+      const relY = -(canvasY / canvasRect.height) * 2 + 1;
+
+      const x = touch.clientX;
+      const y = touch.clientY;
+
+      this._mouse.position = {
+        default: new Vector2(x, y),
+        relative: new Vector2(relX, relY),
+      };
+    }
   }
 
   private onMouseLeave(event: MouseEvent) {
