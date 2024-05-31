@@ -9,6 +9,7 @@ import {
   PerspectiveCamera,
   SRGBColorSpace,
   Scene,
+  Vector2,
   Vector3,
   WebGLRenderer,
 } from "three";
@@ -83,7 +84,8 @@ export class PathingGame {
 
     const directionaLight = new DirectionalLight(new Color(1, 1, 1), 3);
     directionaLight.castShadow = true;
-    directionaLight.position.set(1.0, 1.0, 1.0);
+    directionaLight.shadow.mapSize = new Vector2(2048, 2048);
+    directionaLight.position.set(0.7, 0.65, 2.0);
     this.scene.add(directionaLight);
 
     this.renderer = new WebGLRenderer({ antialias: true });

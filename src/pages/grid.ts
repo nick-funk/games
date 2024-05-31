@@ -229,6 +229,9 @@ export class Grid {
     square.isClickable = isClickable;
     square.canTraverse = true;
 
+    square.receiveShadow = true;
+    square.castShadow = true;
+
     square.material.needsUpdate = true;
 
     return square;
