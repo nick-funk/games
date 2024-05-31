@@ -1,30 +1,24 @@
-import { FunctionComponent, useCallback } from "react";
+import {
+  FunctionComponent,
+} from "react";
 import { PathingGame } from "../game";
 
 import "./root.css";
+import { GameStateContext, useLiveGameState } from "./gameState";
+import { ControlsMenu } from "./controlsMenu";
 
 interface Props {
   game: PathingGame;
 }
 
 export const UIRoot: FunctionComponent<Props> = ({ game }) => {
-  const onPlay = useCallback(() => {
-    game.state.play = true;
-  }, [game]);
-
-  const onReset = useCallback(() => {
-    game.state.reset = true;
-  }, [game]);
+  const stateVal = useLiveGameState(game);
 
   return (
     <div className="uiRoot">
-      <button onClick={onPlay}>
-        Play
-      </button>
-
-      <button onClick={onReset}>
-        Reset
-      </button>
+      <GameStateContext.Provider value={stateVal}>
+        <ControlsMenu />
+      </GameStateContext.Provider>
     </div>
   );
 };

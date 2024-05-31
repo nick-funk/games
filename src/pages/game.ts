@@ -26,6 +26,7 @@ import { isSmallScreen } from "../three/screen";
 export interface State {
   play: boolean;
   reset: boolean;
+  blocks: number;
 }
 
 export class PathingGame {
@@ -42,6 +43,7 @@ export class PathingGame {
   private renderPass: SSAARenderPass;
   private gammaCorrectionPass: ShaderPass;
   private lastTime: number;
+  private isLoaded: boolean;
 
   public state: State;
 
@@ -55,7 +57,7 @@ export class PathingGame {
 
   public async init() {
     this.resetState();
-
+    this.state.blocks = 8;
     const parentRect = this.parentElement.getBoundingClientRect();
     this.camera = new PerspectiveCamera(
       70,
@@ -76,7 +78,7 @@ export class PathingGame {
 
     this.scene = new Scene();
 
-    this.grid = new Grid();
+    this.grid = new Grid(8, 8, this.state.blocks);
     this.grid.addToScene(this.scene);
 
     const ambientLight = new AmbientLight(new Color(1, 1, 1), 0.75);
@@ -108,13 +110,18 @@ export class PathingGame {
     this.parentElement.appendChild(this.renderer.domElement);
 
     window.addEventListener("resize", this.resizeDelegate);
+
+    this.isLoaded = true;
   }
 
   private resetState() {
     this.state = {
+      ...this.state,
       play: false,
       reset: false,
-    }
+    };
+
+    return this.state;
   }
 
   public resize() {
@@ -131,9 +138,14 @@ export class PathingGame {
     const elapsed = (time - this.lastTime) / 1000;
     this.lastTime = time;
 
+    if (!this.isLoaded) {
+      return;
+    }
+
     this.input.update();
 
     this.grid.update(this.input, this.camera, elapsed);
+    this.state.blocks = this.grid.blocks;
 
     if (this.input.isKeyDown("p") || this.state.play) {
       this.grid.traverse();

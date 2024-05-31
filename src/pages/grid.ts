@@ -47,9 +47,14 @@ export class Grid {
   private start: Vector2;
   private end: Vector2;
 
-  constructor(width = 8, length = 8) {
+  public blocks: number;
+  private initialBlocks: number;
+
+  constructor(width = 8, length = 8, blocks: number) {
     this.rays = new Raycaster();
     this.lookup = new Map<string, GridMesh>();
+    this.initialBlocks = blocks;
+    this.blocks = blocks;
 
     this.group = new Group();
 
@@ -89,6 +94,8 @@ export class Grid {
   }
 
   public reset() {
+    this.blocks = this.initialBlocks;
+
     for (let x = 0; x < this.width; x++) {
       for (let y = 0; y < this.length; y++) {
         const isStart = this.isStart(x, y);
@@ -324,11 +331,17 @@ export class Grid {
         return;
       }
 
-      const material = mesh.material as MeshBasicMaterial;
-      mesh.canTraverse = !mesh.canTraverse;
-      mesh.pathMarked = false;
+      if (mesh.canTraverse && this.blocks > 0) {
+        mesh.canTraverse = false;
+        mesh.pathMarked = false;
 
-      material.needsUpdate = true;
+        this.blocks--;
+      } else if (!mesh.canTraverse) {
+        mesh.canTraverse = true;
+        mesh.pathMarked = false;
+
+        this.blocks++;
+      }
     }
   }
 }
