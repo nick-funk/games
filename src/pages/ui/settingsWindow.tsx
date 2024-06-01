@@ -28,7 +28,7 @@ export const SettingsWindow: FunctionComponent<Props> = ({ manager }) => {
       setRenderScale(1);
       manager.setRenderScale(1);
     }
-  }, [renderScale]);
+  }, [renderScale, manager]);
 
   const renderFidelity = useMemo(() => {
     if (renderScale === 1) {
