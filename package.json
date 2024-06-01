@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "source": [
     "src/index.html",
-    "src/pages/pathing.html"
+    "src/pages/pathing/index.html"
   ],
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {

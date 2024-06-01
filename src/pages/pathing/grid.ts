@@ -10,14 +10,13 @@ import {
   Scene,
   SphereGeometry,
   Vector2,
-  Vector3,
 } from "three";
-import { InputManager } from "../three/inputManager";
-import { nearest } from "../three/nearest";
+import { InputManager } from "../../three/inputManager";
+import { nearest } from "../../three/nearest";
 import {
   NodeResult,
   computePath,
-} from "../../node_modules/nf-pathfinder/dist/index";
+} from "../../../node_modules/nf-pathfinder/dist/index";
 
 interface GridMesh extends Mesh {
   isClickable: boolean;

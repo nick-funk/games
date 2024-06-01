@@ -13,12 +13,12 @@ import {
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { SSAARenderPass } from "three/examples/jsm/postprocessing/SSAARenderPass";
 
-import { calculatePixelRatio, resizeToParent, wrapResizeFunc } from "../three/resize";
+import { calculatePixelRatio, resizeToParent, wrapResizeFunc } from "../../three/resize";
 import { Grid, GridDefinition } from "./grid";
-import { InputManager } from "../three/inputManager";
+import { InputManager } from "../../three/inputManager";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { GammaCorrectionShader } from "./gammaCorrectionShader";
-import { isSmallScreen } from "../three/screen";
+import { isSmallScreen } from "../../three/screen";
 
 export interface State {
   play: boolean;
