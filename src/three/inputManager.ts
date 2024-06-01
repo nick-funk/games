@@ -90,6 +90,16 @@ export class InputManager {
     canvas.addEventListener("touchstart", this.onPressDelegate);
   }
 
+  public dispose() {
+    this.canvas.removeEventListener("pointermove", this.onMouseMoveDelegate);
+    this.canvas.removeEventListener("mousedown", this.onMouseDownDelegate);
+    this.canvas.removeEventListener("mouseup", this.onMouseUpDelegate);
+    this.canvas.removeEventListener("click", this.onMouseClickDelegate);
+    this.canvas.removeEventListener("wheel", this.onMouseWheelDelegate);
+    this.canvas.removeEventListener("mouseleave", this.onMouseLeaveDelegate);
+    this.canvas.removeEventListener("touchstart", this.onPressDelegate);
+  }
+
   public update() {
     this._mouse.buttons.left.clicked = false;
     this._mouse.buttons.right.clicked = false;

@@ -1,13 +1,10 @@
 import {
   AmbientLight,
   Color,
-  ColorManagement,
   DirectionalLight,
-  LinearDisplayP3ColorSpace,
   LinearSRGBColorSpace,
   PCFSoftShadowMap,
   PerspectiveCamera,
-  SRGBColorSpace,
   Scene,
   Vector2,
   Vector3,
@@ -59,7 +56,22 @@ export class PathingGame {
     this.resizeDelegate = wrapResizeFunc(this.resize.bind(this));
   }
 
+  public dispose() {
+    if (!this.isLoaded) {
+      return;
+    }
+
+    this.input.dispose();
+    this.parentElement.removeChild(this.renderer.domElement);
+    
+    window.removeEventListener("resize", this.resizeDelegate);
+  }
+
   public async init(grid: GridDefinition) {
+    if (this.isLoaded) {
+      return;
+    }
+
     this.resetState();
     this.state.blocks = 0;
     this.state.totalBlocks = grid.placeableBlocks;

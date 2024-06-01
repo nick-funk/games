@@ -1,30 +1,32 @@
 import { createContext, useCallback, useEffect, useState } from "react";
-import { PathingGame, State } from "../game";
+import { GameManager } from "../gameManager";
+import { State } from "../game";
 
-export const useLiveGameState = (game: PathingGame) => {
-  const [state, _setState] = useState<State>(game.state);
+export const useLiveGameState = (manager: GameManager) => {
+  const [state, _setState] = useState<State>(manager.getState());
   useEffect(() => {
     const interval = setInterval(() => {
-      _setState(game.state);
+      _setState(manager.getState());
     }, 100);
 
     return () => {
       clearInterval(interval);
     };
-  }, [game]);
+  }, [manager]);
 
   const setState = useCallback(
     (value: any) => {
-      game.state = {
-        ...game.state,
+      manager.setState({
+        ...manager.getState(),
         ...value,
-      };
+      });
 
-      _setState(game.state);
+      const st = manager.getState();
+      _setState(st);
 
-      return game.state;
+      return st;
     },
-    [_setState, state]
+    [_setState, state, manager]
   );
 
   return { state, setState };
@@ -40,10 +42,6 @@ const emptySet = (value: any) => {
 };
 
 export const GameStateContext = createContext<ContextStateValue>({
-  state: {
-    play: false,
-    reset: false,
-    blocks: 0,
-  },
+  state: GameManager.emptyState(),
   setState: emptySet,
 });

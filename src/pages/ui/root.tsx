@@ -1,18 +1,18 @@
 import {
   FunctionComponent,
 } from "react";
-import { PathingGame } from "../game";
 
 import "./root.css";
 import { GameStateContext, useLiveGameState } from "./gameState";
 import { ControlsMenu } from "./controlsMenu";
+import { GameManager } from "../gameManager";
 
 interface Props {
-  game: PathingGame;
+  manager: GameManager;
 }
 
-export const UIRoot: FunctionComponent<Props> = ({ game }) => {
-  const stateVal = useLiveGameState(game);
+export const UIRoot: FunctionComponent<Props> = ({ manager }) => {
+  const stateVal = useLiveGameState(manager);
 
   return (
     <div className="uiRoot">
