@@ -6,7 +6,7 @@ This is the code for that site and its various project examples.
 
 The live site is hosted here: https://games.nickfunk.com
 
-I also use it to showcase some of the game dev libraries I've put together to speed up coding games in Three.js.
+I also use it to showcase some of the game dev libraries I've put together to speed up coding in Three.js.
 
 ## Game dev libraries
 
