@@ -25,6 +25,19 @@ export class GameManager {
         },
       ],
     });
+    this.gameDefinitions.set("2", {
+      width: 8,
+      length: 8,
+      start: new Vector2(3, 2),
+      end: new Vector2(3, 5),
+      placeableBlocks: 12,
+      targets: [
+        {
+          position: new Vector2(3, 1),
+          score: 5,
+        },
+      ],
+    });
   }
 
   public async loadGame(id: string) {
