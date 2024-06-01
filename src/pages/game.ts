@@ -13,7 +13,7 @@ import {
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { SSAARenderPass } from "three/examples/jsm/postprocessing/SSAARenderPass";
 
-import { resizeToParent, wrapResizeFunc } from "../three/resize";
+import { calculatePixelRatio, resizeToParent, wrapResizeFunc } from "../three/resize";
 import { Grid, GridDefinition } from "./grid";
 import { InputManager } from "../three/inputManager";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
@@ -32,6 +32,8 @@ export interface State {
 
 export class PathingGame {
   public readonly id: number;
+  public renderScale: number;
+
   private parentElement: HTMLElement;
   private animDelegate: (time: number) => void;
   private resizeDelegate: () => void;
@@ -49,9 +51,10 @@ export class PathingGame {
 
   public state: State;
 
-  constructor(id: number, parentElement: HTMLElement) {
+  constructor(id: number, parentElement: HTMLElement, renderScale: number) {
     this.id = id;
     this.lastTime = 0;
+    this.renderScale = renderScale;
 
     this.parentElement = parentElement;
     this.animDelegate = this.animation.bind(this);
@@ -115,6 +118,7 @@ export class PathingGame {
 
     this.renderer = new WebGLRenderer({ antialias: true });
     this.renderer.setSize(parentRect.width, parentRect.height);
+    this.renderer.setPixelRatio(calculatePixelRatio(this.renderScale));
     this.renderer.setAnimationLoop(this.animDelegate);
 
     this.renderer.shadowMap.enabled = true;
@@ -152,6 +156,7 @@ export class PathingGame {
       this.parentElement,
       [this.camera],
       [this.renderer],
+      this.renderScale,
       [this.renderPass, this.gammaCorrectionPass],
       this.composer
     );
@@ -175,10 +180,6 @@ export class PathingGame {
       const path = this.grid.computePath();
 
       this.grid.playTraversal(path);
-
-      // const result = this.grid.computeScoreForPath(path);
-      // this.state.score = result.score;
-      // this.state.hitTargetCount = result.hitTargetCount;
     }
     if (this.input.isKeyDown("r") || this.state.reset) {
       this.grid.reset();

@@ -7,9 +7,12 @@ export class GameManager {
   private gameDefinitions: Map<number, GridDefinition>;
   private parentElement: HTMLElement;
 
+  private renderScale: number;
+
   constructor(parentElement: HTMLElement) {
     this.parentElement = parentElement;
     this.currentGame = null;
+    this.renderScale = 1;
 
     this.gameDefinitions = new Map<number, GridDefinition>();
     this.gameDefinitions.set(1, {
@@ -50,8 +53,18 @@ export class GameManager {
       this.currentGame.dispose();
     }
 
-    this.currentGame = new PathingGame(id, this.parentElement);
+    this.currentGame = new PathingGame(id, this.parentElement, this.renderScale);
     await this.currentGame.init(def);
+  }
+
+  public getRenderScale(): number {
+    return this.renderScale;
+  }
+
+  public setRenderScale(value: number) {
+    this.renderScale = value;
+    this.currentGame.renderScale = value;
+    this.currentGame.resize();
   }
 
   public currentLevelID(): number {

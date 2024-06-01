@@ -7,6 +7,7 @@ interface ResizableCamera {
 
 interface ResizableRenderer {
   setSize: (width: number, height: number) => void;
+  setPixelRatio: (value: number) => void;
 }
 
 interface ResizablePass {
@@ -17,6 +18,7 @@ export const resizeToParent = (
   parentElement: HTMLElement,
   cameras: ResizableCamera[],
   renderers: ResizableRenderer[],
+  renderScale: number,
   passes?: ResizablePass[],
   composer?: EffectComposer,
 ) => {
@@ -39,6 +41,7 @@ export const resizeToParent = (
 
   for (const renderer of renderers) {
     renderer.setSize(parentRect.width, parentRect.height);
+    renderer.setPixelRatio(calculatePixelRatio(renderScale));
   }
 };
 
@@ -62,4 +65,8 @@ export const wrapResizeFunc = (resizeCallback: () => void) => {
       timeout = setTimeout(resizeCallback, repeatTimeMs);
     }
   }
+}
+
+export const calculatePixelRatio = (renderScale: number) => {
+  return window.devicePixelRatio * renderScale;
 }

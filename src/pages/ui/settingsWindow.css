@@ -1,0 +1,46 @@
+.settingsWindow {
+  position: absolute;
+  top: calc(100vh - 50px - 8px);
+  left: calc(100vw - 50px - 2 * 8px - 8px);
+  width: 50px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+
+  border-radius: 4px;
+  border-style: solid;
+  border-width: 0px;
+
+  background-color: rgba(35, 35, 35, 0.4);
+
+  padding: 8px;
+}
+
+.settingsWindow > button {
+  position: relative;
+
+  font-family: sans-serif;
+  font-size: medium;
+
+  padding: 6px 12px;
+  border: 1px outset rgb(86, 37, 245);
+  border-radius: 3px;
+  color: rgb(242, 242, 242);
+  background-color: rgb(121, 36, 248);
+  text-decoration: none;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+
+  &:hover {
+    background-color: rgb(149, 83, 250);
+  }
+
+  &:active {
+    background-color: rgb(79, 0, 198);
+  }
+}
