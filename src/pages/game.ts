@@ -1,5 +1,6 @@
 import {
   AmbientLight,
+  BasicShadowMap,
   Color,
   DirectionalLight,
   LinearSRGBColorSpace,
@@ -12,8 +13,13 @@ import {
 } from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { SSAARenderPass } from "three/examples/jsm/postprocessing/SSAARenderPass";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 
-import { calculatePixelRatio, resizeToParent, wrapResizeFunc } from "../three/resize";
+import {
+  calculatePixelRatio,
+  resizeToParent,
+  wrapResizeFunc,
+} from "../three/resize";
 import { Grid, GridDefinition } from "./grid";
 import { InputManager } from "../three/inputManager";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
@@ -44,7 +50,7 @@ export class PathingGame {
   private input: InputManager;
   private grid: Grid;
   private composer: EffectComposer;
-  private renderPass: SSAARenderPass;
+  private renderPass: RenderPass | SSAARenderPass;
   private gammaCorrectionPass: ShaderPass;
   private lastTime: number;
   private isLoaded: boolean;
@@ -112,7 +118,9 @@ export class PathingGame {
 
     const directionaLight = new DirectionalLight(new Color(1, 1, 1), 3);
     directionaLight.castShadow = true;
-    directionaLight.shadow.mapSize = new Vector2(2048, 2048);
+    directionaLight.shadow.mapSize = isSmallScreen()
+      ? new Vector2(512, 512)
+      : new Vector2(2048, 2048);
     directionaLight.position.set(0.7, 0.65, 2.0);
     this.scene.add(directionaLight);
 
@@ -122,12 +130,16 @@ export class PathingGame {
     this.renderer.setAnimationLoop(this.animDelegate);
 
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = PCFSoftShadowMap;
+    this.renderer.shadowMap.type = isSmallScreen()
+      ? BasicShadowMap
+      : PCFSoftShadowMap;
     this.renderer.outputColorSpace = LinearSRGBColorSpace;
 
     this.composer = new EffectComposer(this.renderer);
 
-    this.renderPass = new SSAARenderPass(this.scene, this.camera);
+    this.renderPass = isSmallScreen()
+      ? new RenderPass(this.scene, this.camera)
+      : new SSAARenderPass(this.scene, this.camera);
     this.composer.addPass(this.renderPass);
 
     this.gammaCorrectionPass = new ShaderPass(GammaCorrectionShader);
