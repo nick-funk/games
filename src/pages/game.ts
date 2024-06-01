@@ -31,6 +31,7 @@ export interface State {
 }
 
 export class PathingGame {
+  public readonly id: number;
   private parentElement: HTMLElement;
   private animDelegate: (time: number) => void;
   private resizeDelegate: () => void;
@@ -48,7 +49,8 @@ export class PathingGame {
 
   public state: State;
 
-  constructor(parentElement: HTMLElement) {
+  constructor(id: number, parentElement: HTMLElement) {
+    this.id = id;
     this.lastTime = 0;
 
     this.parentElement = parentElement;

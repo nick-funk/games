@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const manager = new GameManager(threeParent);
-  await manager.loadGame("1");
+  await manager.loadGame(1);
 
   const reactRoot = document.getElementById("reactRoot");
   if (!reactRoot) {

@@ -4,15 +4,15 @@ import { GridDefinition } from "./grid";
 
 export class GameManager {
   private currentGame: PathingGame | null;
-  private gameDefinitions: Map<string, GridDefinition>;
+  private gameDefinitions: Map<number, GridDefinition>;
   private parentElement: HTMLElement;
 
   constructor(parentElement: HTMLElement) {
     this.parentElement = parentElement;
     this.currentGame = null;
 
-    this.gameDefinitions = new Map<string, GridDefinition>();
-    this.gameDefinitions.set("1", {
+    this.gameDefinitions = new Map<number, GridDefinition>();
+    this.gameDefinitions.set(1, {
       width: 8,
       length: 8,
       start: new Vector2(0, 0),
@@ -25,7 +25,7 @@ export class GameManager {
         },
       ],
     });
-    this.gameDefinitions.set("2", {
+    this.gameDefinitions.set(2, {
       width: 8,
       length: 8,
       start: new Vector2(3, 2),
@@ -40,7 +40,7 @@ export class GameManager {
     });
   }
 
-  public async loadGame(id: string) {
+  public async loadGame(id: number) {
     const def = this.gameDefinitions.get(id);
     if (!def) {
       return;
@@ -50,8 +50,12 @@ export class GameManager {
       this.currentGame.dispose();
     }
 
-    this.currentGame = new PathingGame(this.parentElement);
+    this.currentGame = new PathingGame(id, this.parentElement);
     await this.currentGame.init(def);
+  }
+
+  public currentLevelID(): number {
+    return this.currentGame ? this.currentGame.id : 0;
   }
 
   public setState(state: State) {

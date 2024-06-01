@@ -1,11 +1,9 @@
-import {
-  FunctionComponent,
-} from "react";
+import { FunctionComponent } from "react";
 
-import "./root.css";
 import { GameStateContext, useLiveGameState } from "./gameState";
-import { ControlsMenu } from "./controlsMenu";
+import { ControlWindow } from "./controlWindow";
 import { GameManager } from "../gameManager";
+import { ScoreWindow } from "./scoreWindow";
 
 interface Props {
   manager: GameManager;
@@ -15,10 +13,11 @@ export const UIRoot: FunctionComponent<Props> = ({ manager }) => {
   const stateVal = useLiveGameState(manager);
 
   return (
-    <div className="uiRoot">
-      <GameStateContext.Provider value={stateVal}>
-        <ControlsMenu />
-      </GameStateContext.Provider>
-    </div>
+    <GameStateContext.Provider value={stateVal}>
+      <>
+        <ControlWindow />
+        {stateVal.state.score > 0 && <ScoreWindow manager={manager} />}
+      </>
+    </GameStateContext.Provider>
   );
 };
