@@ -65,7 +65,7 @@ export class PathingGame {
 
     this.input.dispose();
     this.parentElement.removeChild(this.renderer.domElement);
-    
+
     window.removeEventListener("resize", this.resizeDelegate);
   }
 
@@ -173,16 +173,23 @@ export class PathingGame {
     if (this.input.isKeyDown("p") || this.state.play) {
       this.grid.clearPath();
       const path = this.grid.computePath();
-      this.grid.renderPath(path);
 
-      const result = this.grid.computeScoreForPath(path);
-      this.state.score = result.score;
-      this.state.hitTargetCount = result.hitTargetCount;
+      this.grid.playTraversal(path);
+
+      // const result = this.grid.computeScoreForPath(path);
+      // this.state.score = result.score;
+      // this.state.hitTargetCount = result.hitTargetCount;
     }
     if (this.input.isKeyDown("r") || this.state.reset) {
       this.grid.reset();
       this.state.score = 0;
       this.state.hitTargetCount = 0;
+    }
+
+    if (this.grid.animatedPath?.complete) {
+      const result = this.grid.computeScoreForPath(this.grid.animatedPath.path);
+      this.state.score = result.score;
+      this.state.hitTargetCount = result.hitTargetCount;
     }
 
     this.resetState();

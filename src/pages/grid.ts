@@ -61,6 +61,13 @@ export interface PathScore {
   blockCount: number;
 }
 
+export interface AnimatedPath {
+  path: NodeResult[];
+  index: number;
+  timer: number;
+  complete: boolean;
+}
+
 export class Grid {
   private gridGroup: Group;
   private targetGroup: Group;
@@ -80,6 +87,9 @@ export class Grid {
   public placeableBlocks: number;
   private initialPlaceableBlocks: number;
 
+  public animatedPath: AnimatedPath | null;
+  private animatedPathInterval: number = 0.25;
+
   constructor({
     width,
     length,
@@ -92,6 +102,7 @@ export class Grid {
     this.lookup = new Map<string, GridMesh>();
     this.gridGroup = new Group();
     this.targetGroup = new Group();
+    this.animatedPath = null;
 
     this.width = width;
     this.length = length;
@@ -143,6 +154,7 @@ export class Grid {
   }
 
   public reset() {
+    this.animatedPath = null;
     this.placeableBlocks = this.initialPlaceableBlocks;
 
     for (let x = 0; x < this.width; x++) {
@@ -285,7 +297,7 @@ export class Grid {
       targetCount: this.targets.length,
       score,
       blocksUsed: this.initialPlaceableBlocks - this.placeableBlocks,
-      blockCount: this.initialPlaceableBlocks
+      blockCount: this.initialPlaceableBlocks,
     };
   }
 
@@ -350,14 +362,56 @@ export class Grid {
     scene.add(this.targetGroup);
   }
 
-  public;
+  public playTraversal(path: NodeResult[]) {
+    this.animatedPath = {
+      path,
+      index: 0,
+      timer: 0,
+      complete: false,
+    };
+  }
 
   public update(input: InputManager, camera: Camera, elapsed: number) {
     this.updateClick(input, camera);
-    this.updateAnimations(elapsed);
+    this.updateSquareAnimations(elapsed);
+    this.updateAnimatedPath(elapsed);
   }
 
-  private updateAnimations(elapsed: number) {
+  private updateAnimatedPath(elapsed: number) {
+    if (
+      !this.animatedPath ||
+      this.animatedPath.index >= this.animatedPath.path.length ||
+      this.animatedPath.complete
+    ) {
+      return;
+    }
+
+    // Update current index colour
+    const p = this.animatedPath.path[this.animatedPath.index];
+    const isStart = this.isStart(p.x, p.y);
+    const isEnd = this.isEnd(p.x, p.y);
+
+    const key = this.computeKey(p.x, p.y);
+    const square = this.lookup.get(key);
+    if (square && !isStart && !isEnd) {
+      square.pathMarked = true;
+      square.material.color.set(PATH_COLOUR);
+      square.material.needsUpdate = true;
+    }
+
+    // Progress through path
+    this.animatedPath.timer += elapsed;
+    if (this.animatedPath.timer < this.animatedPathInterval) {
+      return;
+    }
+
+    this.animatedPath.timer = 0;
+    this.animatedPath.index += 1;
+    this.animatedPath.complete =
+      this.animatedPath.index >= this.animatedPath.path.length;
+  }
+
+  private updateSquareAnimations(elapsed: number) {
     const speed = 0.25;
     const diff = elapsed * speed;
 
