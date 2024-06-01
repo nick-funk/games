@@ -21,7 +21,9 @@ export const ControlsMenu: FunctionComponent = () => {
       <button onClick={onPlay}>Play</button>
       <button onClick={onReset}>Reset</button>
 
-      <div>{state.blocks}</div>
+      <div>Blocks: {state.blocks} / {state.totalBlocks}</div>
+      <div>Targets: {state.hitTargetCount} / {state.targetCount}</div>
+      <div>Score: {state.score}</div>
     </>
   );
 };

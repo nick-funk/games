@@ -17,7 +17,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { SSAARenderPass } from "three/examples/jsm/postprocessing/SSAARenderPass";
 
 import { resizeToParent, wrapResizeFunc } from "../three/resize";
-import { Grid } from "./grid";
+import { Grid, GridDefinition } from "./grid";
 import { InputManager } from "../three/inputManager";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { GammaCorrectionShader } from "./gammaCorrectionShader";
@@ -27,6 +27,10 @@ export interface State {
   play: boolean;
   reset: boolean;
   blocks: number;
+  totalBlocks: number;
+  score: number;
+  hitTargetCount: number;
+  targetCount: number;
 }
 
 export class PathingGame {
@@ -55,9 +59,14 @@ export class PathingGame {
     this.resizeDelegate = wrapResizeFunc(this.resize.bind(this));
   }
 
-  public async init() {
+  public async init(grid: GridDefinition) {
     this.resetState();
-    this.state.blocks = 8;
+    this.state.blocks = 0;
+    this.state.totalBlocks = grid.placeableBlocks;
+    this.state.score = 0;
+    this.state.hitTargetCount = 0;
+    this.state.targetCount = grid.targets.length;
+
     const parentRect = this.parentElement.getBoundingClientRect();
     this.camera = new PerspectiveCamera(
       70,
@@ -78,7 +87,7 @@ export class PathingGame {
 
     this.scene = new Scene();
 
-    this.grid = new Grid(8, 8, this.state.blocks);
+    this.grid = new Grid(grid);
     this.grid.addToScene(this.scene);
 
     const ambientLight = new AmbientLight(new Color(1, 1, 1), 0.75);
@@ -145,13 +154,21 @@ export class PathingGame {
     this.input.update();
 
     this.grid.update(this.input, this.camera, elapsed);
-    this.state.blocks = this.grid.blocks;
+    this.state.blocks = this.grid.placeableBlocks;
 
     if (this.input.isKeyDown("p") || this.state.play) {
-      this.grid.traverse();
+      this.grid.clearPath();
+      const path = this.grid.computePath();
+      this.grid.renderPath(path);
+
+      const result = this.grid.computeScoreForPath(path);
+      this.state.score = result.score;
+      this.state.hitTargetCount = result.hitTargetCount;
     }
     if (this.input.isKeyDown("r") || this.state.reset) {
       this.grid.reset();
+      this.state.score = 0;
+      this.state.hitTargetCount = 0;
     }
 
     this.resetState();

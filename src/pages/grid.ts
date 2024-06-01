@@ -8,12 +8,16 @@ import {
   MeshStandardMaterial,
   Raycaster,
   Scene,
+  SphereGeometry,
   Vector2,
   Vector3,
 } from "three";
 import { InputManager } from "../three/inputManager";
 import { nearest } from "../three/nearest";
-import { computePath } from "../../node_modules/nf-pathfinder/dist/index";
+import {
+  NodeResult,
+  computePath,
+} from "../../node_modules/nf-pathfinder/dist/index";
 
 interface GridMesh extends Mesh {
   isClickable: boolean;
@@ -33,8 +37,33 @@ const PATH_COLOUR = new Color(0.3, 0.3, 1);
 
 const RAISE_AMOUNT = 0.1;
 
+export interface GridTarget {
+  position: Vector2;
+  score: number;
+}
+
+export interface GridDefinition {
+  width: number;
+  length: number;
+  start: Vector2;
+  end: Vector2;
+  placeableBlocks: number;
+  targets: GridTarget[];
+}
+
+export interface PathScore {
+  hitAllTargets: boolean;
+  hitTargetCount: number;
+  hitTargets: GridTarget[];
+  targetCount: number;
+  score: number;
+  blocksUsed: number;
+  blockCount: number;
+}
+
 export class Grid {
-  private group: Group;
+  private gridGroup: Group;
+  private targetGroup: Group;
   private rays: Raycaster;
 
   private leftMouseDown: boolean;
@@ -46,23 +75,31 @@ export class Grid {
 
   private start: Vector2;
   private end: Vector2;
+  private targets: GridTarget[];
 
-  public blocks: number;
-  private initialBlocks: number;
+  public placeableBlocks: number;
+  private initialPlaceableBlocks: number;
 
-  constructor(width = 8, length = 8, blocks: number) {
+  constructor({
+    width,
+    length,
+    start,
+    end,
+    placeableBlocks,
+    targets,
+  }: GridDefinition) {
     this.rays = new Raycaster();
     this.lookup = new Map<string, GridMesh>();
-    this.initialBlocks = blocks;
-    this.blocks = blocks;
-
-    this.group = new Group();
+    this.gridGroup = new Group();
+    this.targetGroup = new Group();
 
     this.width = width;
     this.length = length;
-
-    this.start = new Vector2(0, 0);
-    this.end = new Vector2(width - 1, length - 1);
+    this.initialPlaceableBlocks = placeableBlocks;
+    this.placeableBlocks = placeableBlocks;
+    this.start = start;
+    this.end = end;
+    this.targets = targets;
 
     const offsetX = width / 2;
     const offsetY = length / 2;
@@ -77,9 +114,21 @@ export class Grid {
         square.translateX(xTransl);
         square.translateY(yTransl);
 
-        this.group.add(square);
+        this.gridGroup.add(square);
         this.lookup.set(square.key, square);
       }
+    }
+
+    for (const target of targets) {
+      const xTransl = (target.position.x - offsetX) * scaling + scaling / 2;
+      const yTransl = (target.position.y - offsetY) * scaling + scaling / 2;
+
+      const mesh = this.createTarget(target.position.x, target.position.y);
+      mesh.translateX(xTransl);
+      mesh.translateY(yTransl);
+      mesh.translateZ(0.1);
+
+      this.targetGroup.add(mesh);
     }
 
     this.reset();
@@ -94,7 +143,7 @@ export class Grid {
   }
 
   public reset() {
-    this.blocks = this.initialBlocks;
+    this.placeableBlocks = this.initialPlaceableBlocks;
 
     for (let x = 0; x < this.width; x++) {
       for (let y = 0; y < this.length; y++) {
@@ -115,7 +164,7 @@ export class Grid {
     }
   }
 
-  private clearPath() {
+  public clearPath() {
     for (let x = 0; x < this.width; x++) {
       for (let y = 0; y < this.length; y++) {
         const isStart = this.isStart(x, y);
@@ -164,7 +213,7 @@ export class Grid {
     return traversalMap;
   }
 
-  public traversalToString(traversal: number[][]) {
+  public traversalMapToString(traversal: number[][]) {
     let output = "";
 
     for (let x = 0; x < this.width; x++) {
@@ -180,16 +229,18 @@ export class Grid {
     return output;
   }
 
-  public traverse() {
-    this.clearPath();
-
+  public computePath() {
     const path = computePath(
       this.computeTraversalMap(),
-      new Vector2(0, 0),
-      new Vector3(this.width - 1, this.length - 1),
+      this.start,
+      this.end,
       false
     );
 
+    return path;
+  }
+
+  public renderPath(path: NodeResult[]) {
     for (const p of path) {
       const isStart = this.isStart(p.x, p.y);
       const isEnd = this.isEnd(p.x, p.y);
@@ -206,6 +257,38 @@ export class Grid {
     }
   }
 
+  public computeScoreForPath(path: NodeResult[]): PathScore {
+    const hitTargetSet = new Set<GridTarget>();
+
+    for (const node of path) {
+      for (const target of this.targets) {
+        if (node.x === target.position.x && node.y === target.position.y) {
+          hitTargetSet.add(target);
+        }
+      }
+    }
+
+    const hitAllTargets = hitTargetSet.size === this.targets.length;
+    const hitTargets = [...hitTargetSet];
+
+    let score = 0;
+    for (const t of hitTargets) {
+      score += t.score;
+    }
+
+    score += this.placeableBlocks;
+
+    return {
+      hitAllTargets,
+      hitTargets,
+      hitTargetCount: hitTargets.length,
+      targetCount: this.targets.length,
+      score,
+      blocksUsed: this.initialPlaceableBlocks - this.placeableBlocks,
+      blockCount: this.initialPlaceableBlocks
+    };
+  }
+
   private computeColor(isStart: boolean, isEnd: boolean) {
     if (isStart) {
       return START_COLOUR;
@@ -219,6 +302,19 @@ export class Grid {
 
   private computeKey(x: number, y: number) {
     return `${x}:${y}`;
+  }
+
+  private createTarget(x: number, y: number) {
+    const geometry = new SphereGeometry(0.025, 8, 8);
+    const material = new MeshStandardMaterial({ color: END_COLOUR });
+
+    const target = new Mesh(geometry, material);
+    target.receiveShadow = true;
+    target.castShadow = true;
+
+    target.material.needsUpdate = true;
+
+    return target;
   }
 
   private createGridSquare(x: number, y: number) {
@@ -245,12 +341,16 @@ export class Grid {
   }
 
   public addToScene(scene: Scene) {
-    scene.add(this.group);
+    scene.add(this.gridGroup);
+    scene.add(this.targetGroup);
   }
 
   public removeFromScene(scene: Scene) {
-    scene.remove(this.group);
+    scene.remove(this.gridGroup);
+    scene.add(this.targetGroup);
   }
+
+  public;
 
   public update(input: InputManager, camera: Camera, elapsed: number) {
     this.updateClick(input, camera);
@@ -285,8 +385,7 @@ export class Grid {
         }
 
         const interp = item.position.z / RAISE_AMOUNT;
-        const color = CLICKED_COLOUR
-          .clone()
+        const color = CLICKED_COLOUR.clone()
           .multiplyScalar(interp)
           .add(UNCLICK_COLOUR.clone().multiplyScalar(1 - interp));
 
@@ -299,8 +398,7 @@ export class Grid {
         }
 
         const interp = item.position.z / RAISE_AMOUNT;
-        const color = UNCLICK_COLOUR
-          .clone()
+        const color = UNCLICK_COLOUR.clone()
           .multiplyScalar(1 - interp)
           .add(CLICKED_COLOUR.clone().multiplyScalar(interp));
 
@@ -322,7 +420,9 @@ export class Grid {
 
   private clickGrid(input: InputManager, camera: Camera) {
     this.rays.setFromCamera(input.mouse().position.relative, camera);
-    const intersections = this.rays.intersectObjects([...this.group.children]);
+    const intersections = this.rays.intersectObjects([
+      ...this.gridGroup.children,
+    ]);
     const int = nearest(camera.position, intersections);
 
     if (int) {
@@ -331,16 +431,16 @@ export class Grid {
         return;
       }
 
-      if (mesh.canTraverse && this.blocks > 0) {
+      if (mesh.canTraverse && this.placeableBlocks > 0) {
         mesh.canTraverse = false;
         mesh.pathMarked = false;
 
-        this.blocks--;
+        this.placeableBlocks--;
       } else if (!mesh.canTraverse) {
         mesh.canTraverse = true;
         mesh.pathMarked = false;
 
-        this.blocks++;
+        this.placeableBlocks++;
       }
     }
   }
