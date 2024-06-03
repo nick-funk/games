@@ -11,14 +11,9 @@ body {
 
   padding: 0;
   margin: 0;
-  width: calc(100% - 16px);
-  height: calc(100% - 16px);
 
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 8px;
+  text-align: center;
+  color: rgb(242, 242, 242);
 }
 
 .nav {
@@ -26,12 +21,63 @@ body {
   align-items: center;
   flex-direction: column;
   justify-content: space-between;
+  align-items: center;
+  text-align: center;
   gap: 8px;
 
-  padding: 16px;
-  margin-top: 16px;
+  width: 100%;
+}
 
-  color: rgb(242, 242, 242);
+.game {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+
+  margin-bottom: 8px;
+
+  border-radius: 8px;
+  border-style: solid;
+  border-width: 2px;
+  border-color: rgb(79, 0, 198);;
+  overflow: hidden;
+
+  width: 324px;
+}
+
+.preview {
+  width: 324px;
+  height: 216px;
+
+  padding: 0px;
+  margin: 0px;
+
+  overflow: hidden;
+
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: rgb(79, 0, 198);;
+}
+
+.video {
+  width: 100%;
+}
+
+.game .description {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+
+  padding: 8px;
+}
+
+.game .description .content {
+  margin-bottom: 8px;
+}
+
+.game .actions {
+  text-align: center;
+  padding: 8px;
 }
 
 a.buttonLink {
