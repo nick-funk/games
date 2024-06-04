@@ -41,12 +41,11 @@ body {
   border-color: rgb(79, 0, 198);;
   overflow: hidden;
 
-  width: 324px;
+  width: 320px;
 }
 
 .preview {
-  width: 324px;
-  height: 216px;
+  height: 170px;
 
   padding: 0px;
   margin: 0px;
@@ -58,9 +57,13 @@ body {
   border-top-color: rgb(79, 0, 198);;
 }
 
+.videoLink {
+  height: 0;
+}
+
 .video {
   width: 100%;
-  height: 100%;
+  object-fit: cover;
 }
 
 .game .description {
