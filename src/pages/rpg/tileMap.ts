@@ -45,7 +45,12 @@ export class TileMap {
   constructor(loader: TextureLoader) {
     const townTexture = loader.load(texture);
 
-    const geometry = this.createGeometry();
+    const tileMap = [
+      [0, 1, 2],
+      [12, 13, 14],
+      [24, 25, 26],
+    ];
+    const geometry = this.createGeometry(tileMap);
 
     const uniforms = {
       diffuseTexture: {
@@ -63,22 +68,27 @@ export class TileMap {
     this.mesh = new Mesh(geometry, material);
   }
 
-  private createGeometry(width = 12, height = 11, tileSizePx = 16) {
+  private createGeometry(
+    tileMap: number[][],
+    width = 12,
+    height = 11,
+    tileSizePx = 16
+  ) {
     const geometry = new InstancedBufferGeometry();
 
-    const tileVertSize = 0.25;
+    const halfTileVertSize = 0.25;
     const vertices = new Float32Array([
-      -tileVertSize,
-      -tileVertSize,
+      -halfTileVertSize,
+      -halfTileVertSize,
       0.0, // v0
-      tileVertSize,
-      -tileVertSize,
+      halfTileVertSize,
+      -halfTileVertSize,
       0.0, // v1
-      tileVertSize,
-      tileVertSize,
+      halfTileVertSize,
+      halfTileVertSize,
       0.0, // v2
-      -tileVertSize,
-      tileVertSize,
+      -halfTileVertSize,
+      halfTileVertSize,
       0.0, // v3
     ]);
 
@@ -87,25 +97,69 @@ export class TileMap {
       ...this.computeUvs(width, height, tileSizePx),
     ]);
 
-    const offsets = new Float32Array([0.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
-    const uvOffsets = new Float32Array([
-      ...this.computeUVOffset(15, width, height, tileSizePx),
-      ...this.computeUVOffset(119, width, height, tileSizePx),
-    ])
+    const { offsets, uvOffsets } = this.computeTiles(
+      tileMap,
+      halfTileVertSize * 2,
+      width,
+      height,
+      tileSizePx
+    );
 
     geometry.setAttribute("position", new Float32BufferAttribute(vertices, 3));
     geometry.setIndex(indices);
 
     geometry.setAttribute("aUv", new Float32BufferAttribute(uvs, 2));
     geometry.setAttribute("aOffset", new InstancedBufferAttribute(offsets, 3));
-    geometry.setAttribute("aUvOffset", new InstancedBufferAttribute(uvOffsets, 2))
+    geometry.setAttribute(
+      "aUvOffset",
+      new InstancedBufferAttribute(uvOffsets, 2)
+    );
 
     return geometry;
   }
 
-  private computeUVOffset(tileNum: number, width: number, height: number, tileSizePx: number) {
-    const imageWidth = width * tileSizePx;
-    const imageHeight = height * tileSizePx;
+  private computeTiles(
+    tileMap: number[][],
+    tileVertSize: number,
+    width: number,
+    height: number,
+    tileSizePx: number
+  ) {
+    const offsets: number[] = [];
+    const uvOffsets: number[] = [];
+
+    for (let j = 0; j < tileMap.length; j++) {
+      for (let i = 0; i < tileMap[j].length; i++) {
+        const tileNum = tileMap[j][i];
+
+        const x = i * tileVertSize;
+        const y = -j * tileVertSize;
+
+        offsets.push(x);
+        offsets.push(y);
+        offsets.push(0.0);
+
+        uvOffsets.push(
+          ...this.computeUVOffset(tileNum, width, height, tileSizePx)
+        );
+      }
+    }
+
+    return {
+      offsets: new Float32Array(offsets),
+      uvOffsets: new Float32Array(uvOffsets),
+    };
+  }
+
+  private computeUVOffset(
+    tileNum: number,
+    width: number,
+    height: number,
+    tileSizePx: number,
+    gapSizePx: number = 1,
+  ) {
+    const imageWidth = width * tileSizePx + gapSizePx * (width - 1);
+    const imageHeight = height * tileSizePx + gapSizePx * (height - 1);
 
     const tX = tileNum % width;
     const tY = Math.floor((tileNum - tX) / width);
@@ -113,36 +167,24 @@ export class TileMap {
     const x = tX;
     const y = height - tY - 1;
 
-    const pX = x * tileSizePx;
-    const pY = y * tileSizePx;
+    const pX = x * tileSizePx + x * gapSizePx;
+    const pY = y * tileSizePx + y * gapSizePx;
 
     const uvX = pX / imageWidth;
     const uvY = pY / imageHeight;
 
-    const offset = [
-      uvX,
-      uvY
-    ];
+    const offset = [uvX, uvY];
 
     return offset;
   }
 
-  private computeUvs(width: number, height: number, tileSizePx: number) {
-    const imageWidth = width * tileSizePx;
-    const imageHeight = height * tileSizePx;
+  private computeUvs(width: number, height: number, tileSizePx: number, gapSizePx: number = 1) {
+    const imageWidth = width * tileSizePx + gapSizePx * (width - 1);
+    const imageHeight = height * tileSizePx + gapSizePx * (height - 1);
 
     const tileSizeX = tileSizePx / imageWidth;
     const tileSizeY = tileSizePx / imageHeight;
-    const uvs = [
-      0,
-      0,
-      tileSizeX,
-      0,
-      tileSizeX,
-      tileSizeY,
-      0,
-      tileSizeY,
-    ];
+    const uvs = [0, 0, tileSizeX, 0, tileSizeX, tileSizeY, 0, tileSizeY];
 
     return uvs;
   }
