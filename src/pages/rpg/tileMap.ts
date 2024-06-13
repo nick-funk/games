@@ -229,8 +229,8 @@ export class TileMap {
     tileSizePx: number,
     gapSizePx: number = 1
   ) {
-    const gapX = gapSizePx / imageWidth;
-    const gapY = gapSizePx / imageHeight;
+    const gapX = gapSizePx / imageWidth / 2;
+    const gapY = gapSizePx / imageHeight / 2;
 
     const tileSizeX = (tileSizePx / imageWidth) - gapX;
     const tileSizeY = (tileSizePx / imageHeight) - gapY;
