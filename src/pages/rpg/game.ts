@@ -18,10 +18,11 @@ import {
 } from "../../three/resize";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { SSAARenderPass } from "three/examples/jsm/postprocessing/SSAARenderPass";
-import { TileMap } from "./tileMap";
 
+import { TileMap } from "./tileMap";
 import townDefinition from "../../data/rpg/tilemaps/town.json";
-import { Agent, AgentTextures } from "./agent";
+import { Agent } from "./agent";
+import { Textures } from "./textures/textures";
 
 export interface State {}
 
@@ -44,9 +45,11 @@ export class RPGGame {
   private renderPass: SSAARenderPass;
 
   public state: State;
-  loader: TextureLoader;
-  agentTextures: AgentTextures;
-  player: Agent;
+
+  private loader: TextureLoader;
+  private textures: Textures;
+
+  private player: Agent;
 
   constructor(parentElement: HTMLElement, renderScale: number) {
     this.lastTime = 0;
@@ -105,14 +108,14 @@ export class RPGGame {
     window.addEventListener("resize", this.resizeDelegate);
 
     this.loader = new TextureLoader();
+    this.textures = new Textures(this.loader);
 
-    const tileMap = new TileMap(this.loader, townDefinition);
-    await tileMap.init();
+    const tileMap = new TileMap(townDefinition);
+    await tileMap.init(this.textures.tileMap);
     tileMap.addToScene(this.scene);
 
-    this.agentTextures = new AgentTextures(this.loader);
     this.player = new Agent();
-    await this.player.init(await this.agentTextures.load("knight"));
+    await this.player.init(await this.textures.agents.load("knight"));
     this.player.addToScene(this.scene);
 
     this.isLoaded = true;

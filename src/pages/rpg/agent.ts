@@ -4,28 +4,10 @@ import {
   PlaneGeometry,
   Scene,
   Texture,
-  TextureLoader,
   Vector3,
 } from "three";
 
-import knightTextureURL from "../../data/rpg/textures/knight.png";
 import { InputManager } from "../../three/inputManager";
-
-export class AgentTextures {
-  private textures: Map<string, string>;
-  private loader: TextureLoader;
-
-  constructor(loader: TextureLoader) {
-    this.loader = loader;
-
-    this.textures = new Map<string, string>();
-    this.textures.set("knight", knightTextureURL);
-  }
-
-  public async load(key: string) {
-    return this.loader.loadAsync(this.textures.get(key));
-  }
-}
 
 export class Agent {
   private mesh: Mesh;
