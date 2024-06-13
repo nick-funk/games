@@ -2,14 +2,13 @@ import {
   TextureLoader,
   Mesh,
   Scene,
-  BufferGeometry,
   ShaderMaterial,
   Float32BufferAttribute,
   InstancedBufferGeometry,
   InstancedBufferAttribute,
 } from "three";
 
-import texture from "../../data/rpg/town-spaced.png";
+import townTextureURL from "../../data/rpg/textures/town-spaced.png";
 
 const vertexShader = `
   precision highp float;
@@ -43,11 +42,41 @@ const fragmentShader = `
   }
 `;
 
+interface TileMapDefinition {
+  texture: string;
+  map: number[][];
+  walk: number[][];
+}
+
+export class TileMapTextures {
+  public readonly textures: Map<string, string>;
+  
+  private loader: TextureLoader;
+
+  constructor(loader: TextureLoader) {
+    this.loader = loader;
+    this.textures = new Map<string, string>;
+
+    this.textures.set("town", townTextureURL);
+  }
+
+  public async load(key: string) {
+    return await this.loader.loadAsync(this.textures.get(key));
+  }
+}
+
 export class TileMap {
   private mesh: Mesh;
+  private textures: TileMapTextures;
+  private definition: TileMapDefinition;
 
-  public async init(loader: TextureLoader) {
-    const townTexture = await loader.loadAsync(texture);
+  constructor(loader: TextureLoader, definition: TileMapDefinition) {
+    this.textures = new TileMapTextures(loader);
+    this.definition = definition;
+  }
+
+  public async init() {
+    const texture = await this.textures.load(this.definition.texture);
 
     const tileMap = [
       [0, 1, 2],
@@ -67,8 +96,8 @@ export class TileMap {
       tileMap,
       tilesetWidth,
       tilesetHeight,
-      townTexture.image.width,
-      townTexture.image.height,
+      texture.image.width,
+      texture.image.height,
       tileSizePx,
       tileVertSize,
       gapSizePx,
@@ -77,7 +106,7 @@ export class TileMap {
 
     const uniforms = {
       diffuseTexture: {
-        value: townTexture,
+        value: texture,
       },
     };
 

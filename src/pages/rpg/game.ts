@@ -2,7 +2,6 @@ import {
   AmbientLight,
   Color,
   DirectionalLight,
-  LinearSRGBColorSpace,
   PCFSoftShadowMap,
   PerspectiveCamera,
   Scene,
@@ -20,6 +19,8 @@ import {
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { SSAARenderPass } from "three/examples/jsm/postprocessing/SSAARenderPass";
 import { TileMap } from "./tileMap";
+
+import townDefinition from "../../data/rpg/tilemaps/town.json";
 
 export interface State {}
 
@@ -101,8 +102,9 @@ export class RPGGame {
     window.addEventListener("resize", this.resizeDelegate);
 
     this.loader = new TextureLoader();
-    const tileMap = new TileMap();
-    await tileMap.init(this.loader);
+
+    const tileMap = new TileMap(this.loader, townDefinition);
+    await tileMap.init();
     tileMap.addToScene(this.scene);
 
     this.isLoaded = true;
