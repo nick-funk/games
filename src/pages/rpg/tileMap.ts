@@ -129,6 +129,8 @@ export class TileMap {
       const mesh = new Mesh(geometry, material);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+      
       this.layerMeshes.push(mesh);
     }
 
