@@ -126,6 +126,7 @@ export class RPGGame {
     this.player = new Agent(this.world);
     await this.player.init(await this.textures.agents.load("knight"));
     this.player.addToScene(this.scene);
+    tileMap.moveTo(this.player, "start");
 
     this.isLoaded = true;
   }

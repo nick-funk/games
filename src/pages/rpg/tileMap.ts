@@ -5,10 +5,12 @@ import {
   Float32BufferAttribute,
   InstancedBufferGeometry,
   InstancedBufferAttribute,
+  Vector3,
 } from "three";
 import { TextureLibrary } from "./textures/textures";
 import { BODY_TYPES, Body, Box, Vec3, World } from "cannon-es";
 import { CollisionGroup } from "./collision";
+import { Agent } from "./agent";
 
 const vertexShader = `
   precision highp float;
@@ -47,10 +49,24 @@ interface TileMapLayer {
   map: number[][];
 }
 
+interface TileMapPoI {
+  name: string;
+  x: number;
+  y: number;
+}
+
 interface TileMapDefinition {
   texture: string;
   layers: TileMapLayer[];
   walk: number[][];
+  poi: TileMapPoI[];
+
+  tileVertSize: number;
+  tileVertGap: number;
+  tilesetWidth: number;
+  tilesetHeight: number;
+  tileSizePx: number;
+  gapSizePx: number;
 }
 
 export class TileMap {
@@ -58,22 +74,30 @@ export class TileMap {
 
   private layerMeshes: Mesh[];
   private bodies: Body[];
+  private tileVertSize: number;
+  private tileVertGap: number;
+  private tilesetWidth: number;
+  private tilesetHeight: number;
+  private tileSizePx: number;
+  private gapSizePx: number;
+  private poi: TileMapPoI[];
 
   constructor(definition: TileMapDefinition) {
     this.definition = definition;
+
+    this.tileVertSize = definition.tileVertSize;
+    this.tileVertGap = definition.tileVertGap;
+    this.tilesetWidth = definition.tilesetWidth;
+    this.tilesetHeight = definition.tilesetHeight;
+    this.tileSizePx = definition.tileSizePx;
+    this.gapSizePx = definition.gapSizePx;
+    this.poi = definition.poi;
 
     this.layerMeshes = [];
   }
 
   public async init(textures: TextureLibrary) {
     const texture = await textures.load(this.definition.texture);
-
-    const tileSizePx = 16;
-    const tileVertSize = 0.2;
-    const tilesetWidth = 12;
-    const tilesetHeight = 11;
-    const gapSizePx = 1;
-    const tileVertGap = 0;
 
     const uniforms = {
       diffuseTexture: {
@@ -92,14 +116,14 @@ export class TileMap {
       const geometry = this.createGeometry(
         layer.map,
         layer.z,
-        tilesetWidth,
-        tilesetHeight,
+        this.tilesetWidth,
+        this.tilesetHeight,
         texture.image.width,
         texture.image.height,
-        tileSizePx,
-        tileVertSize,
-        gapSizePx,
-        tileVertGap,
+        this.tileSizePx,
+        this.tileVertSize,
+        this.gapSizePx,
+        this.tileVertGap
       );
 
       const mesh = new Mesh(geometry, material);
@@ -108,15 +132,17 @@ export class TileMap {
       this.layerMeshes.push(mesh);
     }
 
-    this.bodies = this.computeBodies(this.definition.walk, tileVertSize, tileVertGap);
+    this.bodies = this.computeBodies(
+      this.definition.walk,
+      this.tileVertSize,
+      this.tileVertGap
+    );
   }
 
   public addToScene(scene: Scene, world: World) {
     for (const mesh of this.layerMeshes) {
       scene.add(mesh);
     }
-
-    console.log(this.bodies);
 
     for (const body of this.bodies) {
       world.addBody(body);
@@ -126,14 +152,14 @@ export class TileMap {
   private createGeometry(
     tileMap: number[][],
     z: number,
-    width,
-    height,
-    imageWidth: number,
-    imageHeight: number,
+    width: number,
+    height: number,
+    textureWidthPx: number,
+    textureHeightPx: number,
     tileSizePx = 16,
     tileVertSize = 0.1,
     gapSizePx = 1,
-    tileVertGap = 0,
+    tileVertGap = 0
   ) {
     const geometry = new InstancedBufferGeometry();
 
@@ -155,7 +181,13 @@ export class TileMap {
 
     const indices: number[] = [0, 1, 2, 2, 3, 0];
     const uvs = new Float32Array([
-      ...this.computeUvs(width, height, imageWidth, imageHeight, tileSizePx),
+      ...this.computeUvs(
+        width,
+        height,
+        textureWidthPx,
+        textureHeightPx,
+        tileSizePx
+      ),
     ]);
 
     const { offsets, uvOffsets } = this.computeTiles(
@@ -164,8 +196,8 @@ export class TileMap {
       tileVertGap,
       width,
       height,
-      imageWidth,
-      imageHeight,
+      textureWidthPx,
+      textureHeightPx,
       tileSizePx,
       gapSizePx
     );
@@ -186,11 +218,9 @@ export class TileMap {
   private computeBodies(
     walkMap: number[][],
     tileVertSize: number,
-    tileVertGap: number,
+    tileVertGap: number
   ) {
     const bodies: Body[] = [];
-
-    console.log(walkMap);
 
     for (let j = 0; j < walkMap.length; j++) {
       for (let i = 0; i < walkMap[j].length; i++) {
@@ -204,7 +234,9 @@ export class TileMap {
 
         const body = new Body({
           mass: 1,
-          shape: new Box(new Vec3(tileVertSize / 2, tileVertSize / 2, tileVertSize / 2)),
+          shape: new Box(
+            new Vec3(tileVertSize / 2, tileVertSize / 2, tileVertSize / 2)
+          ),
           type: BODY_TYPES.STATIC,
           angularFactor: new Vec3(0, 0, 0),
           linearFactor: new Vec3(0, 0, 0),
@@ -229,7 +261,7 @@ export class TileMap {
     imageWidth: number,
     imageHeight: number,
     tileSizePx: number,
-    gapSizePx: number,
+    gapSizePx: number
   ) {
     const offsets: number[] = [];
     const uvOffsets: number[] = [];
@@ -305,10 +337,35 @@ export class TileMap {
     const gapX = gapSizePx / imageWidth / 2;
     const gapY = gapSizePx / imageHeight / 2;
 
-    const tileSizeX = (tileSizePx / imageWidth) - gapX;
-    const tileSizeY = (tileSizePx / imageHeight) - gapY;
-    const uvs = [gapX, gapY, tileSizeX, gapY, tileSizeX, tileSizeY, gapX, tileSizeY];
+    const tileSizeX = tileSizePx / imageWidth - gapX;
+    const tileSizeY = tileSizePx / imageHeight - gapY;
+    const uvs = [
+      gapX,
+      gapY,
+      tileSizeX,
+      gapY,
+      tileSizeX,
+      tileSizeY,
+      gapX,
+      tileSizeY,
+    ];
 
     return uvs;
+  }
+
+  public tilePosToVec(xTile: number, yTile: number) {
+    const scalar = this.tileVertSize + this.tileVertGap;
+
+    return new Vector3(xTile * scalar, -yTile * scalar, 0.0);
+  }
+
+  public moveTo(agent: Agent, name: string) {
+    const poi = this.poi.find((p) => p.name === name);
+    if (!poi) {
+      return;
+    }
+
+    const p = this.tilePosToVec(poi.x, poi.y);
+    agent.position = new Vector3(p.x, p.y, p.z);
   }
 }
