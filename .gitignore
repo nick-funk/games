@@ -3,3 +3,4 @@ dist/
 node_modules/
 
 *.ts.swp
+.DS_Store

@@ -13,22 +13,20 @@ import { Body, Box, Vec3, World } from "cannon-es";
 import { CollisionGroup } from "./collision";
 
 export class Agent {
-  private mesh: Mesh;
+  protected mesh: Mesh;
 
-  private _speed: number;
-  private _size: Vector2;
+  protected _speed: number;
+  protected _size: Vector2;
 
-  private world: World;
-  private body: Body;
+  protected world: World;
+  protected body: Body;
 
-  constructor(world: World) {
+  constructor(world: World, texture: Texture) {
     this.world = world;
-    
+
     this._speed = 2.0;
     this._size = new Vector2(0.2, 0.2);
-  }
 
-  public async init(texture: Texture) {
     const material = new MeshStandardMaterial({
       map: texture,
       transparent: true,
@@ -39,7 +37,7 @@ export class Agent {
 
     this.body = new Body({
       mass: 1,
-      shape: new Box(new Vec3(this._size.x / 2, this._size.y / 2, 1)),
+      shape: new Box(new Vec3(this._size.x / 2, this._size.y / 2, 0.025)),
       linearDamping: 0.95,
       angularDamping: 0.95,
       angularFactor: new Vec3(0, 0, 0),
@@ -67,6 +65,22 @@ export class Agent {
     this.world.addBody(this.body);
   }
 
+  public syncPosition() {
+    this.mesh.position.set(
+      this.body.position.x,
+      this.body.position.y,
+      this.body.position.z
+    );
+    this.mesh.quaternion.set(
+      this.body.quaternion.x,
+      this.body.quaternion.y,
+      this.body.quaternion.z,
+      this.body.quaternion.w
+    );
+  }
+}
+
+export class PlayerAgent extends Agent {
   public update(elapsed: number, input: InputManager) {
     const dir = new Vector3(0, 0, 0);
     if (input.isKeyDown("w")) {
@@ -88,16 +102,36 @@ export class Agent {
       .multiplyScalar(elapsed * this._speed);
     this.body.applyImpulse(new Vec3(diff.x, diff.y, diff.z));
 
-    this.mesh.position.set(
-      this.body.position.x,
-      this.body.position.y,
-      this.body.position.z
-    );
-    this.mesh.quaternion.set(
-      this.body.quaternion.x,
-      this.body.quaternion.y,
-      this.body.quaternion.z,
-      this.body.quaternion.w
-    );
+    this.syncPosition();
+  }
+}
+
+export class MobAgent extends Agent {
+  private aggroRadius: number;
+  private aggroed: boolean;
+
+  constructor(world: World, texture: Texture, aggroRadius: number) {
+    super(world, texture);
+
+    this.aggroRadius = aggroRadius;
+    this.aggroed = false;
+    this._speed = 0.25;
+  }
+
+  public update(elapsed: number, player: PlayerAgent) {
+    this.aggroed = this.isAggroed(player.position);
+
+    if (this.aggroed) {
+      const dir = player.position.sub(this.position).normalize();
+      const imp = dir.multiplyScalar(elapsed * this._speed);
+      this.body.applyImpulse(new Vec3(imp.x, imp.y, imp.z));
+    }
+
+    this.syncPosition();
+  }
+
+  private isAggroed(playerPosition: Vector3): boolean {
+    const diff = this.position.distanceTo(playerPosition);
+    return diff <= this.aggroRadius;
   }
 }

@@ -5,6 +5,7 @@ import townTextureURL from "../../../data/rpg/textures/town-spaced.png";
 
 // agents
 import knightTextureURL from "../../../data/rpg/textures/knight.png";
+import crabTextureURL from "../../../data/rpg/textures/crab.png";
 
 export class Textures {
   public readonly tileMap: TextureLibrary;
@@ -44,6 +45,7 @@ export class AgentTextures extends TextureLibrary {
     super(loader);
 
     this.textures.set("knight", knightTextureURL);
+    this.textures.set("crab", crabTextureURL);
   }
 }
 
