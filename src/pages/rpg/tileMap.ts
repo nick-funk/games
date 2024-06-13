@@ -1,5 +1,4 @@
 import {
-  TextureLoader,
   Mesh,
   Scene,
   ShaderMaterial,
@@ -8,6 +7,8 @@ import {
   InstancedBufferAttribute,
 } from "three";
 import { TextureLibrary } from "./textures/textures";
+import { BODY_TYPES, Body, Box, Vec3, World } from "cannon-es";
+import { CollisionGroup } from "./collision";
 
 const vertexShader = `
   precision highp float;
@@ -56,6 +57,7 @@ export class TileMap {
   private definition: TileMapDefinition;
 
   private layerMeshes: Mesh[];
+  private bodies: Body[];
 
   constructor(definition: TileMapDefinition) {
     this.definition = definition;
@@ -104,6 +106,20 @@ export class TileMap {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       this.layerMeshes.push(mesh);
+    }
+
+    this.bodies = this.computeBodies(this.definition.walk, tileVertSize, tileVertGap);
+  }
+
+  public addToScene(scene: Scene, world: World) {
+    for (const mesh of this.layerMeshes) {
+      scene.add(mesh);
+    }
+
+    console.log(this.bodies);
+
+    for (const body of this.bodies) {
+      world.addBody(body);
     }
   }
 
@@ -165,6 +181,43 @@ export class TileMap {
     );
 
     return geometry;
+  }
+
+  private computeBodies(
+    walkMap: number[][],
+    tileVertSize: number,
+    tileVertGap: number,
+  ) {
+    const bodies: Body[] = [];
+
+    console.log(walkMap);
+
+    for (let j = 0; j < walkMap.length; j++) {
+      for (let i = 0; i < walkMap[j].length; i++) {
+        const value = walkMap[j][i];
+        if (value !== 0) {
+          continue;
+        }
+
+        const x = i * (tileVertSize + tileVertGap);
+        const y = -j * (tileVertSize + tileVertGap);
+
+        const body = new Body({
+          mass: 1,
+          shape: new Box(new Vec3(tileVertSize / 2, tileVertSize / 2, tileVertSize / 2)),
+          type: BODY_TYPES.STATIC,
+          angularFactor: new Vec3(0, 0, 0),
+          linearFactor: new Vec3(0, 0, 0),
+          collisionFilterGroup: CollisionGroup.Default,
+          collisionFilterMask: CollisionGroup.Default,
+        });
+
+        body.position.set(x, y, 0);
+        bodies.push(body);
+      }
+    }
+
+    return bodies;
   }
 
   private computeTiles(
@@ -257,11 +310,5 @@ export class TileMap {
     const uvs = [gapX, gapY, tileSizeX, gapY, tileSizeX, tileSizeY, gapX, tileSizeY];
 
     return uvs;
-  }
-
-  public addToScene(scene: Scene) {
-    for (const mesh of this.layerMeshes) {
-      scene.add(mesh);
-    }
   }
 }

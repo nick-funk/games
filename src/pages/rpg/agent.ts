@@ -8,14 +8,19 @@ import {
 } from "three";
 
 import { InputManager } from "../../three/inputManager";
+import { Body, Box, Vec3, World } from "cannon-es";
+import { CollisionGroup } from "./collision";
 
 export class Agent {
   private mesh: Mesh;
 
   private speed: number;
+  private world: World;
+  private body: Body;
 
-  constructor() {
-    this.speed = 0.65;
+  constructor(world: World) {
+    this.speed = 2.0;
+    this.world = world;
   }
 
   public async init(texture: Texture) {
@@ -23,35 +28,67 @@ export class Agent {
       map: texture,
       transparent: true,
     });
-    const geometry = new PlaneGeometry(0.2, 0.2, 1, 1);
+    const size = 0.2;
+
+    const geometry = new PlaneGeometry(size, size, 1, 1);
 
     this.mesh = new Mesh(geometry, material);
+
+    this.body = new Body({
+      mass: 1,
+      shape: new Box(new Vec3(size / 2, size / 2, 1)),
+      linearDamping: 0.95,
+      angularDamping: 0.95,
+      angularFactor: new Vec3(0, 0, 0),
+      linearFactor: new Vec3(1, 1, 0),
+      collisionFilterGroup: CollisionGroup.Default,
+      collisionFilterMask: CollisionGroup.Default,
+    });
   }
 
   get position(): Vector3 {
-    return this.mesh.position.clone();
+    const v = this.body.position.clone();
+    return new Vector3(v.x, v.y, v.z);
   }
 
   set position(value: Vector3) {
-    this.mesh.position.set(value.x, value.y, value.z);
+    this.body.position.set(value.x, value.y, value.z);
   }
 
   public addToScene(scene: Scene) {
     scene.add(this.mesh);
+    this.world.addBody(this.body);
   }
 
   public update(elapsed: number, input: InputManager) {
+    const appliedMovement = new Vector3();
     if (input.isKeyDown("w")) {
-      this.mesh.position.y += elapsed * this.speed;
+      appliedMovement.y += elapsed * this.speed;
     }
     if (input.isKeyDown("s")) {
-      this.mesh.position.y -= elapsed * this.speed;
+      appliedMovement.y -= elapsed * this.speed;
     }
     if (input.isKeyDown("a")) {
-      this.mesh.position.x -= elapsed * this.speed;
+      appliedMovement.x -= elapsed * this.speed;
     }
     if (input.isKeyDown("d")) {
-      this.mesh.position.x += elapsed * this.speed;
+      appliedMovement.x += elapsed * this.speed;
     }
+
+    this.body.applyImpulse(
+      new Vec3(appliedMovement.x, appliedMovement.y, appliedMovement.z)
+    );
+
+    this.mesh.position.set(
+      this.body.position.x,
+      this.body.position.y,
+      this.body.position.z
+    );
+    this.mesh.quaternion.set(
+      this.body.quaternion.x,
+      this.body.quaternion.y,
+      this.body.quaternion.z,
+      this.body.quaternion.w
+    );
   }
 }

@@ -23,6 +23,8 @@ import { TileMap } from "./tileMap";
 import townDefinition from "../../data/rpg/tilemaps/town.json";
 import { Agent } from "./agent";
 import { Textures } from "./textures/textures";
+import { Vec3, World } from "cannon-es";
+import CannonDebugger from "cannon-es-debugger";
 
 export interface State {}
 
@@ -50,6 +52,8 @@ export class RPGGame {
   private textures: Textures;
 
   private player: Agent;
+  private world: World;
+  private cannonDebugger: any;
 
   constructor(parentElement: HTMLElement, renderScale: number) {
     this.lastTime = 0;
@@ -107,14 +111,19 @@ export class RPGGame {
 
     window.addEventListener("resize", this.resizeDelegate);
 
+    this.world = new World({
+      gravity: new Vec3(0, 0, 0),
+    });
+    this.cannonDebugger = CannonDebugger(this.scene, this.world);
+
     this.loader = new TextureLoader();
     this.textures = new Textures(this.loader);
 
     const tileMap = new TileMap(townDefinition);
     await tileMap.init(this.textures.tileMap);
-    tileMap.addToScene(this.scene);
+    tileMap.addToScene(this.scene, this.world);
 
-    this.player = new Agent();
+    this.player = new Agent(this.world);
     await this.player.init(await this.textures.agents.load("knight"));
     this.player.addToScene(this.scene);
 
@@ -150,6 +159,9 @@ export class RPGGame {
 
     const elapsed = (time - this.lastTime) / 1000;
     this.lastTime = time;
+
+    this.world.fixedStep();
+    this.cannonDebugger.update()
 
     this.player.update(elapsed, this.input);
     this.updateCamera();
