@@ -78,13 +78,6 @@ export class TileMap {
   public async init() {
     const texture = await this.textures.load(this.definition.texture);
 
-    const tileMap = [
-      [0, 1, 2],
-      [12, 13, 14],
-      [24, 25, 26],
-      [36, 37, 38],
-    ];
-
     const tileSizePx = 16;
     const tileVertSize = 0.2;
     const tilesetWidth = 12;
@@ -93,7 +86,7 @@ export class TileMap {
     const tileVertGap = 0;
 
     const geometry = this.createGeometry(
-      tileMap,
+      this.definition.map,
       tilesetWidth,
       tilesetHeight,
       texture.image.width,
@@ -196,7 +189,6 @@ export class TileMap {
     for (let j = 0; j < tileMap.length; j++) {
       for (let i = 0; i < tileMap[j].length; i++) {
         const tileNum = tileMap[j][i];
-
         const x = i * (tileVertSize + tileVertGap);
         const y = -j * (tileVertSize + tileVertGap);
 
