@@ -42,9 +42,14 @@ const fragmentShader = `
   }
 `;
 
+interface TileMapLayer {
+  z: number;
+  map: number[][];
+}
+
 interface TileMapDefinition {
   texture: string;
-  map: number[][];
+  layers: TileMapLayer[];
   walk: number[][];
 }
 
@@ -70,9 +75,13 @@ export class TileMap {
   private textures: TileMapTextures;
   private definition: TileMapDefinition;
 
+  private layerMeshes: Mesh[];
+
   constructor(loader: TextureLoader, definition: TileMapDefinition) {
     this.textures = new TileMapTextures(loader);
     this.definition = definition;
+
+    this.layerMeshes = [];
   }
 
   public async init() {
@@ -84,18 +93,6 @@ export class TileMap {
     const tilesetHeight = 11;
     const gapSizePx = 1;
     const tileVertGap = 0;
-
-    const geometry = this.createGeometry(
-      this.definition.map,
-      tilesetWidth,
-      tilesetHeight,
-      texture.image.width,
-      texture.image.height,
-      tileSizePx,
-      tileVertSize,
-      gapSizePx,
-      tileVertGap,
-    );
 
     const uniforms = {
       diffuseTexture: {
@@ -110,11 +107,30 @@ export class TileMap {
       transparent: true,
     });
 
-    this.mesh = new Mesh(geometry, material);
+    for (const layer of this.definition.layers) {
+      const geometry = this.createGeometry(
+        layer.map,
+        layer.z,
+        tilesetWidth,
+        tilesetHeight,
+        texture.image.width,
+        texture.image.height,
+        tileSizePx,
+        tileVertSize,
+        gapSizePx,
+        tileVertGap,
+      );
+
+      const mesh = new Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      this.layerMeshes.push(mesh);
     }
+  }
 
   private createGeometry(
     tileMap: number[][],
+    z: number,
     width,
     height,
     imageWidth: number,
@@ -130,16 +146,16 @@ export class TileMap {
     const vertices = new Float32Array([
       -halfTileVertSize,
       -halfTileVertSize,
-      0.0, // v0
+      z, // v0
       halfTileVertSize,
       -halfTileVertSize,
-      0.0, // v1
+      z, // v1
       halfTileVertSize,
       halfTileVertSize,
-      0.0, // v2
+      z, // v2
       -halfTileVertSize,
       halfTileVertSize,
-      0.0, // v3
+      z, // v3
     ]);
 
     const indices: number[] = [0, 1, 2, 2, 3, 0];
@@ -189,6 +205,10 @@ export class TileMap {
     for (let j = 0; j < tileMap.length; j++) {
       for (let i = 0; i < tileMap[j].length; i++) {
         const tileNum = tileMap[j][i];
+        if (tileNum < 0) {
+          continue;
+        }
+
         const x = i * (tileVertSize + tileVertGap);
         const y = -j * (tileVertSize + tileVertGap);
 
@@ -261,6 +281,8 @@ export class TileMap {
   }
 
   public addToScene(scene: Scene) {
-    scene.add(this.mesh);
+    for (const mesh of this.layerMeshes) {
+      scene.add(mesh);
+    }
   }
 }
