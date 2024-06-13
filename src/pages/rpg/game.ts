@@ -21,6 +21,7 @@ import { SSAARenderPass } from "three/examples/jsm/postprocessing/SSAARenderPass
 import { TileMap } from "./tileMap";
 
 import townDefinition from "../../data/rpg/tilemaps/town.json";
+import { Agent, AgentTextures } from "./agent";
 
 export interface State {}
 
@@ -44,6 +45,8 @@ export class RPGGame {
 
   public state: State;
   loader: TextureLoader;
+  agentTextures: AgentTextures;
+  player: Agent;
 
   constructor(parentElement: HTMLElement, renderScale: number) {
     this.lastTime = 0;
@@ -107,6 +110,11 @@ export class RPGGame {
     await tileMap.init();
     tileMap.addToScene(this.scene);
 
+    this.agentTextures = new AgentTextures(this.loader);
+    this.player = new Agent();
+    await this.player.init(await this.agentTextures.load("knight"));
+    this.player.addToScene(this.scene);
+
     this.isLoaded = true;
   }
 
@@ -133,9 +141,26 @@ export class RPGGame {
   }
 
   public animation(time: number) {
+    if (!this.isLoaded) {
+      return;
+    }
+
     const elapsed = (time - this.lastTime) / 1000;
     this.lastTime = time;
 
+    this.player.update(elapsed, this.input);
+    this.updateCamera();
+
     this.composer.render();
+  }
+
+  private updateCamera() {
+    this.camera.position.set(
+      this.player.position.x,
+      this.player.position.y,
+      this.player.position.z + 2
+    );
+
+    this.camera.lookAt(this.player.position);
   }
 }
