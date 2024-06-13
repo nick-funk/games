@@ -61,23 +61,25 @@ export class Agent {
   }
 
   public update(elapsed: number, input: InputManager) {
-    const appliedMovement = new Vector3();
+    const dir = new Vector3(0, 0, 0);
     if (input.isKeyDown("w")) {
-      appliedMovement.y += elapsed * this.speed;
+      dir.y = 1;
     }
     if (input.isKeyDown("s")) {
-      appliedMovement.y -= elapsed * this.speed;
+      dir.y = -1;
     }
     if (input.isKeyDown("a")) {
-      appliedMovement.x -= elapsed * this.speed;
+      dir.x = -1;
     }
     if (input.isKeyDown("d")) {
-      appliedMovement.x += elapsed * this.speed;
+      dir.x = 1;
     }
 
-    this.body.applyImpulse(
-      new Vec3(appliedMovement.x, appliedMovement.y, appliedMovement.z)
-    );
+    const diff = dir
+      .clone()
+      .normalize()
+      .multiplyScalar(elapsed * this.speed);
+    this.body.applyImpulse(new Vec3(diff.x, diff.y, diff.z));
 
     this.mesh.position.set(
       this.body.position.x,
