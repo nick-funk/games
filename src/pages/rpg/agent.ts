@@ -4,6 +4,7 @@ import {
   PlaneGeometry,
   Scene,
   Texture,
+  Vector2,
   Vector3,
 } from "three";
 
@@ -14,13 +15,17 @@ import { CollisionGroup } from "./collision";
 export class Agent {
   private mesh: Mesh;
 
-  private speed: number;
+  private _speed: number;
+  private _size: Vector2;
+
   private world: World;
   private body: Body;
 
   constructor(world: World) {
-    this.speed = 2.0;
     this.world = world;
+    
+    this._speed = 2.0;
+    this._size = new Vector2(0.2, 0.2);
   }
 
   public async init(texture: Texture) {
@@ -28,15 +33,13 @@ export class Agent {
       map: texture,
       transparent: true,
     });
-    const size = 0.2;
-
-    const geometry = new PlaneGeometry(size, size, 1, 1);
+    const geometry = new PlaneGeometry(this._size.x, this._size.y, 1, 1);
 
     this.mesh = new Mesh(geometry, material);
 
     this.body = new Body({
       mass: 1,
-      shape: new Box(new Vec3(size / 2, size / 2, 1)),
+      shape: new Box(new Vec3(this._size.x / 2, this._size.y / 2, 1)),
       linearDamping: 0.95,
       angularDamping: 0.95,
       angularFactor: new Vec3(0, 0, 0),
@@ -44,6 +47,10 @@ export class Agent {
       collisionFilterGroup: CollisionGroup.Default,
       collisionFilterMask: CollisionGroup.Default,
     });
+  }
+
+  get size(): Vector2 {
+    return this._size.clone();
   }
 
   get position(): Vector3 {
@@ -78,7 +85,7 @@ export class Agent {
     const diff = dir
       .clone()
       .normalize()
-      .multiplyScalar(elapsed * this.speed);
+      .multiplyScalar(elapsed * this._speed);
     this.body.applyImpulse(new Vec3(diff.x, diff.y, diff.z));
 
     this.mesh.position.set(

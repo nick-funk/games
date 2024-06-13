@@ -366,6 +366,10 @@ export class TileMap {
     }
 
     const p = this.tilePosToVec(poi.x, poi.y);
-    agent.position = new Vector3(p.x, p.y, p.z);
+    agent.position = new Vector3(
+      p.x + agent.size.x / 2,
+      p.y - agent.size.y / 2,
+      p.z
+    );
   }
 }
