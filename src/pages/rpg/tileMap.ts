@@ -12,6 +12,8 @@ import {
 import texture from "../../data/rpg/town-spaced.png";
 
 const vertexShader = `
+  precision highp float;
+
   attribute vec2 aUv;
   attribute vec3 aOffset;
   attribute vec2 aUvOffset;
@@ -29,6 +31,8 @@ const vertexShader = `
 `;
 
 const fragmentShader = `
+  precision highp float;
+
   uniform sampler2D diffuseTexture;
 
   varying vec2 vUv;
@@ -42,15 +46,34 @@ const fragmentShader = `
 export class TileMap {
   private mesh: Mesh;
 
-  constructor(loader: TextureLoader) {
-    const townTexture = loader.load(texture);
+  public async init(loader: TextureLoader) {
+    const townTexture = await loader.loadAsync(texture);
 
     const tileMap = [
       [0, 1, 2],
       [12, 13, 14],
       [24, 25, 26],
+      [36, 37, 38],
     ];
-    const geometry = this.createGeometry(tileMap);
+
+    const tileSizePx = 16;
+    const tileVertSize = 0.2;
+    const tilesetWidth = 12;
+    const tilesetHeight = 11;
+    const gapSizePx = 1;
+    const tileVertGap = 0;
+
+    const geometry = this.createGeometry(
+      tileMap,
+      tilesetWidth,
+      tilesetHeight,
+      townTexture.image.width,
+      townTexture.image.height,
+      tileSizePx,
+      tileVertSize,
+      gapSizePx,
+      tileVertGap,
+    );
 
     const uniforms = {
       diffuseTexture: {
@@ -66,17 +89,22 @@ export class TileMap {
     });
 
     this.mesh = new Mesh(geometry, material);
-  }
+    }
 
   private createGeometry(
     tileMap: number[][],
-    width = 12,
-    height = 11,
-    tileSizePx = 16
+    width,
+    height,
+    imageWidth: number,
+    imageHeight: number,
+    tileSizePx = 16,
+    tileVertSize = 0.1,
+    gapSizePx = 1,
+    tileVertGap = 0,
   ) {
     const geometry = new InstancedBufferGeometry();
 
-    const halfTileVertSize = 0.25;
+    const halfTileVertSize = tileVertSize / 2;
     const vertices = new Float32Array([
       -halfTileVertSize,
       -halfTileVertSize,
@@ -94,15 +122,19 @@ export class TileMap {
 
     const indices: number[] = [0, 1, 2, 2, 3, 0];
     const uvs = new Float32Array([
-      ...this.computeUvs(width, height, tileSizePx),
+      ...this.computeUvs(width, height, imageWidth, imageHeight, tileSizePx),
     ]);
 
     const { offsets, uvOffsets } = this.computeTiles(
       tileMap,
-      halfTileVertSize * 2,
+      tileVertSize,
+      tileVertGap,
       width,
       height,
-      tileSizePx
+      imageWidth,
+      imageHeight,
+      tileSizePx,
+      gapSizePx
     );
 
     geometry.setAttribute("position", new Float32BufferAttribute(vertices, 3));
@@ -121,9 +153,13 @@ export class TileMap {
   private computeTiles(
     tileMap: number[][],
     tileVertSize: number,
+    tileVertGap: number,
     width: number,
     height: number,
-    tileSizePx: number
+    imageWidth: number,
+    imageHeight: number,
+    tileSizePx: number,
+    gapSizePx: number,
   ) {
     const offsets: number[] = [];
     const uvOffsets: number[] = [];
@@ -132,15 +168,23 @@ export class TileMap {
       for (let i = 0; i < tileMap[j].length; i++) {
         const tileNum = tileMap[j][i];
 
-        const x = i * tileVertSize;
-        const y = -j * tileVertSize;
+        const x = i * (tileVertSize + tileVertGap);
+        const y = -j * (tileVertSize + tileVertGap);
 
         offsets.push(x);
         offsets.push(y);
         offsets.push(0.0);
 
         uvOffsets.push(
-          ...this.computeUVOffset(tileNum, width, height, tileSizePx)
+          ...this.computeUVOffset(
+            tileNum,
+            width,
+            height,
+            imageWidth,
+            imageHeight,
+            tileSizePx,
+            gapSizePx
+          )
         );
       }
     }
@@ -155,12 +199,11 @@ export class TileMap {
     tileNum: number,
     width: number,
     height: number,
+    imageWidth: number,
+    imageHeight: number,
     tileSizePx: number,
-    gapSizePx: number = 1,
+    gapSizePx: number
   ) {
-    const imageWidth = width * tileSizePx + gapSizePx * (width - 1);
-    const imageHeight = height * tileSizePx + gapSizePx * (height - 1);
-
     const tX = tileNum % width;
     const tY = Math.floor((tileNum - tX) / width);
 
@@ -178,13 +221,20 @@ export class TileMap {
     return offset;
   }
 
-  private computeUvs(width: number, height: number, tileSizePx: number, gapSizePx: number = 1) {
-    const imageWidth = width * tileSizePx + gapSizePx * (width - 1);
-    const imageHeight = height * tileSizePx + gapSizePx * (height - 1);
+  private computeUvs(
+    width: number,
+    height: number,
+    imageWidth: number,
+    imageHeight: number,
+    tileSizePx: number,
+    gapSizePx: number = 1
+  ) {
+    const gapX = gapSizePx / imageWidth;
+    const gapY = gapSizePx / imageHeight;
 
-    const tileSizeX = tileSizePx / imageWidth;
-    const tileSizeY = tileSizePx / imageHeight;
-    const uvs = [0, 0, tileSizeX, 0, tileSizeX, tileSizeY, 0, tileSizeY];
+    const tileSizeX = (tileSizePx / imageWidth) - gapX;
+    const tileSizeY = (tileSizePx / imageHeight) - gapY;
+    const uvs = [gapX, gapY, tileSizeX, gapY, tileSizeX, tileSizeY, gapX, tileSizeY];
 
     return uvs;
   }

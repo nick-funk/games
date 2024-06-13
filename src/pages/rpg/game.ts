@@ -101,7 +101,8 @@ export class RPGGame {
     window.addEventListener("resize", this.resizeDelegate);
 
     this.loader = new TextureLoader();
-    const tileMap = new TileMap(this.loader);
+    const tileMap = new TileMap();
+    await tileMap.init(this.loader);
     tileMap.addToScene(this.scene);
 
     this.isLoaded = true;
