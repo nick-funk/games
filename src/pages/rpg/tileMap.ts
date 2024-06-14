@@ -13,6 +13,8 @@ import { BODY_TYPES, Body, Box, Sphere, Vec3, World } from "cannon-es";
 import { CollisionGroup } from "./collision";
 import { Agent } from "./agent";
 import { clamp } from "./math";
+import { PathDebugger } from "./pathDebugger";
+import { Grid, manhattan, search } from "nf-pathfinder";
 
 const vertexShader = `
   precision highp float;
@@ -76,13 +78,15 @@ export class TileMap {
 
   private layerMeshes: Mesh[];
   private bodies: Body[];
-  private tileVertSize: number;
-  private tileVertGap: number;
   private tilesetWidth: number;
   private tilesetHeight: number;
+  private tileVertSize: number;
+  private tileVertGap: number;
   private tileSizePx: number;
   private gapSizePx: number;
   private poi: TileMapPoI[];
+
+  public readonly walkSize: Vector2;
 
   constructor(definition: TileMapDefinition) {
     this.definition = definition;
@@ -95,7 +99,21 @@ export class TileMap {
     this.gapSizePx = definition.gapSizePx;
     this.poi = definition.poi;
 
+    this.walkSize = this.computeWalkSize(definition.walk);
+
     this.layerMeshes = [];
+  }
+
+  private computeWalkSize(walk?: number[][]) {
+    if (!walk) {
+      return new Vector2(0, 0);
+    }
+
+    if (walk.length === 0) {
+      return new Vector2(0, 0);
+    }
+
+    return new Vector2(walk[0].length, walk.length);
   }
 
   get walk(): number[][] {
@@ -388,5 +406,34 @@ export class TileMap {
       p.y - agent.size.y / 2,
       p.z
     );
+  }
+
+  public computePath(
+    startWorldPos: Vector3,
+    endWorldPos: Vector3,
+    pathDebugger?: PathDebugger,
+    debugID?: string,
+  ) {
+    const start = this.worldPosToTilePos(startWorldPos);
+    const end = this.worldPosToTilePos(endWorldPos);
+
+    const sX = clamp(start.x, 0, this.walkSize.x - 1);
+    const sY = clamp(start.y, 0, this.walkSize.y - 1);
+    const eX = clamp(end.x, 0, this.walkSize.x - 1);
+    const eY = clamp(end.y, 0, this.walkSize.y - 1);
+
+    const graph = new Grid(this.walk, { diagonal: false });
+
+    const gridStart = graph.grid[sY][sX];
+    const gridEnd = graph.grid[eY][eX];
+
+    const nodes = search(graph, gridStart, gridEnd, {
+      closest: true,
+      heuristic: manhattan,
+    });
+
+    pathDebugger?.debugPath(debugID ?? "", nodes, this);
+
+    return nodes;
   }
 }

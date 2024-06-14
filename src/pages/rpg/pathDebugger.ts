@@ -30,4 +30,20 @@ export class PathDebugger {
     this.lines.set(id, line);
     this.scene.add(line);
   }
+
+  public clear(id?: string) {
+    if (id) {
+      const line = this.lines.get(id);
+      if (line) {
+        this.scene.remove(line);
+        this.lines.delete(id);
+      }
+    } else {
+      for (const id of this.lines.keys()) {
+        const line = this.lines.get(id);
+        this.scene.remove(line);
+        this.lines.delete(id);
+      }
+    }
+  }
 }

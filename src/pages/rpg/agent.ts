@@ -12,13 +12,9 @@ import { InputManager } from "../../three/inputManager";
 import { Body, Sphere, Vec3, World } from "cannon-es";
 import { CollisionGroup } from "./collision";
 import { TileMap } from "./tileMap";
-import {
-  Grid,
-  NodeResult,
-  manhattan,
-  search,
-} from "nf-pathfinder";
+import { Grid, NodeResult, manhattan, search } from "nf-pathfinder";
 import { PathDebugger } from "./pathDebugger";
+import { clamp } from "./math";
 
 export class Agent {
   protected mesh: Mesh;
@@ -151,27 +147,18 @@ export class MobAgent extends Agent {
     } else {
       this.pathTimer = 0;
       this.path = null;
+      this.pathDebug?.clear(this.mesh.id.toString());
     }
 
     if (this.aggroed && !this.path) {
-      const start = tileMap.worldPosToTilePos(this.position.clone());
-      const end = tileMap.worldPosToTilePos(player.position.clone());
-
-      const graph = new Grid(tileMap.walk, { diagonal: false });
-
-      const gridStart = graph.grid[start.y][start.x];
-      const gridEnd = graph.grid[end.y][end.x];
-
-      const nodes = search(graph, gridStart, gridEnd, {
-        closest: true,
-        heuristic: manhattan,
-      });
-
-      this.path = nodes;
+      this.path = tileMap.computePath(
+        this.position,
+        player.position,
+        this.pathDebug,
+        this.mesh.id.toString()
+      );
       this.pathIndex = 0;
       this.pathTimer = 0;
-
-      this.pathDebug?.debugPath(this.mesh.id.toString(), this.path, tileMap);
     }
 
     if (this.path && this.path.length > 0 && this.pathIndex !== null) {
