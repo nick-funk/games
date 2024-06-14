@@ -6,11 +6,13 @@ import {
   InstancedBufferGeometry,
   InstancedBufferAttribute,
   Vector3,
+  Vector2,
 } from "three";
 import { TextureLibrary } from "./textures/textures";
-import { BODY_TYPES, Body, Box, Vec3, World } from "cannon-es";
+import { BODY_TYPES, Body, Box, Sphere, Vec3, World } from "cannon-es";
 import { CollisionGroup } from "./collision";
 import { Agent } from "./agent";
+import { clamp } from "./math";
 
 const vertexShader = `
   precision highp float;
@@ -96,6 +98,10 @@ export class TileMap {
     this.layerMeshes = [];
   }
 
+  get walk(): number[][] {
+    return this.definition.walk;
+  }
+
   public async init(textures: TextureLibrary) {
     const texture = await textures.load(this.definition.texture);
 
@@ -130,7 +136,7 @@ export class TileMap {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
-      
+
       this.layerMeshes.push(mesh);
     }
 
@@ -236,9 +242,7 @@ export class TileMap {
 
         const body = new Body({
           mass: 1,
-          shape: new Box(
-            new Vec3(tileVertSize / 2, tileVertSize / 2, tileVertSize / 2)
-          ),
+          shape: new Sphere(tileVertSize / 2),
           type: BODY_TYPES.STATIC,
           angularFactor: new Vec3(0, 0, 0),
           linearFactor: new Vec3(0, 0, 0),
@@ -359,6 +363,17 @@ export class TileMap {
     const scalar = this.tileVertSize + this.tileVertGap;
 
     return new Vector3(xTile * scalar, -yTile * scalar, 0.0);
+  }
+
+  public worldPosToTilePos(position: Vector3) {
+    const relPos = position.clone().sub(this.layerMeshes[0].position.clone());
+    const x = Math.floor(relPos.x / this.tileVertSize);
+    const y = Math.floor(relPos.y / this.tileVertSize);
+
+    const cX = clamp(x, 0, this.tilesetWidth - 1);
+    const cY = clamp(-y, 0, this.tilesetHeight - 1);
+
+    return new Vector2(cX, cY);
   }
 
   public moveTo(agent: Agent, name: string) {

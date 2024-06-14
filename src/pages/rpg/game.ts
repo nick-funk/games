@@ -21,10 +21,11 @@ import { SSAARenderPass } from "three/examples/jsm/postprocessing/SSAARenderPass
 
 import { TileMap } from "./tileMap";
 import townDefinition from "../../data/rpg/tilemaps/town.json";
-import { Agent, MobAgent, PlayerAgent } from "./agent";
+import { MobAgent, PlayerAgent } from "./agent";
 import { Textures } from "./textures/textures";
 import { Vec3, World } from "cannon-es";
 import CannonDebugger from "cannon-es-debugger";
+import { PathDebugger } from "./pathDebugger";
 
 export interface State {}
 
@@ -55,6 +56,7 @@ export class RPGGame {
   private world: World;
   private cannonDebugger: any;
   private mobs: MobAgent[];
+  private tileMap: TileMap;
 
   constructor(parentElement: HTMLElement, renderScale: number) {
     this.lastTime = 0;
@@ -122,21 +124,24 @@ export class RPGGame {
     this.loader = new TextureLoader();
     this.textures = new Textures(this.loader);
 
-    const tileMap = new TileMap(townDefinition);
-    await tileMap.init(this.textures.tileMap);
-    tileMap.addToScene(this.scene, this.world);
+    this.tileMap = new TileMap(townDefinition);
+    await this.tileMap.init(this.textures.tileMap);
+    this.tileMap.addToScene(this.scene, this.world);
 
     this.player = new PlayerAgent(
       this.world,
       await this.textures.agents.load("knight")
     );
     this.player.addToScene(this.scene);
-    tileMap.moveTo(this.player, "start");
+    this.tileMap.moveTo(this.player, "start");
+
+    const pathDebug = new PathDebugger(this.scene);
 
     const mob = new MobAgent(
       this.world,
       await this.textures.agents.load("crab"),
-      0.75
+      0.75,
+      pathDebug
     );
     mob.position = new Vector3(1, -0.75, 0);
     mob.addToScene(this.scene);
@@ -182,7 +187,7 @@ export class RPGGame {
     this.updateCamera();
 
     for (const mob of this.mobs) {
-      mob.update(elapsed, this.player);
+      mob.update(elapsed, this.player, this.tileMap);
     }
 
     this.composer.render();
